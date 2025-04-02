@@ -3,7 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import axiosInstance from "../../api/axiosInstance.js"; // Adjust the import path if needed
 import { CloudUpload, Folder } from "lucide-react";
 import CustomReactQuill from "../../Components/Admin/CustomReactQuill.jsx"; // Adjust the import path
-import { useModal } from "../../Context/modalContext.jsx"; // Adjust the import path
+import { useModal } from "../../Context/ModalContext.jsx"; // Adjust the import path
 
 const AddProduct = () => {
     const navigate = useNavigate();
