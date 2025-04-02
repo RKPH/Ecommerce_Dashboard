@@ -1,0 +1,115 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.custom-scrollbar {
+    scrollbar-width: thin; /* For Firefox */
+}
+
+.light-scrollbar::-webkit-scrollbar {
+    width: 8px; /* Width of the scrollbar */
+}
+
+.light-scrollbar::-webkit-scrollbar-track {
+    background: #b3b0b0; /* Light gray track, matching the image */
+    border-radius: 10px;
+}
+
+.light-scrollbar::-webkit-scrollbar-thumb {
+    background: #858181; /* Darker gray thumb */
+    border-radius: 10px;
+}
+
+.light-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #555; /* Darker on hover */
+}
+
+.dark-scrollbar::-webkit-scrollbar {
+    width: 8px; /* Width of the scrollbar */
+}
+
+.dark-scrollbar::-webkit-scrollbar-track {
+    background: #2d2f36; /* Darker track for dark mode */
+    border-radius: 10px;
+}
+
+.dark-scrollbar::-webkit-scrollbar-thumb {
+    background: #666; /* Lighter gray thumb for contrast */
+    border-radius: 10px;
+}
+
+.dark-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #888; /* Lighter on hover */
+}
+
+/* Style the React Quill editor */
+.quill {
+    background: transparent;
+    border: none;
+}
+
+.ql-toolbar.ql-snow {
+    background: #f3f4f6; /* bg-gray-100 */
+    border: 1px solid #d1d5db; /* border-gray-300 */
+    border-bottom: none;
+    border-top-left-radius: 0.5rem; /* rounded-lg */
+    border-top-right-radius: 0.5rem; /* rounded-lg */
+}
+
+.dark .ql-toolbar.ql-snow {
+    background: #374151; /* bg-gray-700 */
+    border: 1px solid #4b5563; /* border-gray-600 */
+}
+
+.ql-container.ql-snow {
+    background: #f3f4f6; /* bg-gray-100 */
+    border: 1px solid #d1d5db; /* border-gray-300 */
+    border-bottom-left-radius: 0.5rem; /* rounded-lg */
+    border-bottom-right-radius: 0.5rem; /* rounded-lg */
+    color: #111827; /* text-gray-900 */
+}
+
+.dark .ql-container.ql-snow {
+    background: #374151; /* bg-gray-700 */
+    border: 1px solid #4b5563; /* border-gray-600 */
+    color: #f3f4f6; /* text-gray-100 */
+}
+
+.ql-editor {
+    min-height: 120px; /* Ensure the editor has a minimum height */
+}
+
+.ql-editor::before {
+    color: #6b7280; /* placeholder-gray-500 */
+}
+
+.dark .ql-editor::before {
+    color: #9ca3af; /* dark:placeholder-gray-400 */
+}
+
+/* Style the toolbar buttons */
+.ql-toolbar.ql-snow .ql-formats {
+    margin-right: 8px;
+}
+
+.ql-toolbar.ql-snow .ql-picker-label,
+.ql-toolbar.ql-snow .ql-picker-item {
+    color: #374151; /* text-gray-700 */
+}
+
+.dark .ql-toolbar.ql-snow .ql-picker-label,
+.dark .ql-toolbar.ql-snow .ql-picker-item {
+    color: #d1d5db; /* text-gray-300 */
+}
+
+.ql-toolbar.ql-snow .ql-picker-label:hover,
+.ql-toolbar.ql-snow .ql-picker-item:hover,
+.ql-toolbar.ql-snow .ql-button:hover {
+    color: #2563eb; /* text-blue-600 */
+}
+
+.dark .ql-toolbar.ql-snow .ql-picker-label:hover,
+.dark .ql-toolbar.ql-snow .ql-picker-item:hover,
+.dark .ql-toolbar.ql-snow .ql-button:hover {
+    color: #60a5fa; /* text-blue-400 */
+}

@@ -1,0 +1,39 @@
+.custom-scrollbar {
+    scrollbar-width: thin; /* For Firefox */
+}
+
+.light-scrollbar::-webkit-scrollbar {
+    width: 8px; /* Width of the scrollbar */
+}
+
+.light-scrollbar::-webkit-scrollbar-track {
+    background: #df0000; /* Light gray track, matching the image */
+    border-radius: 10px;
+}
+
+.light-scrollbar::-webkit-scrollbar-thumb {
+    background: #858181; /* Darker gray thumb */
+    border-radius: 10px;
+}
+
+.light-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #b80404; /* Darker on hover */
+}
+
+.dark-scrollbar::-webkit-scrollbar {
+    width: 8px; /* Width of the scrollbar */
+}
+
+.dark-scrollbar::-webkit-scrollbar-track {
+    background: #2d2f36; /* Darker track for dark mode */
+    border-radius: 10px;
+}
+
+.dark-scrollbar::-webkit-scrollbar-thumb {
+    background: #666; /* Lighter gray thumb for contrast */
+    border-radius: 10px;
+}
+
+.dark-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #888; /* Lighter on hover */
+}
