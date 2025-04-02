@@ -384,4 +384,4 @@ const EditUser = () => {
     );
 };
 
-export default EditUser;git remote add origin https://github.com/RKPH/Ecommerce_Dashboard.git
+export default EditUser;
