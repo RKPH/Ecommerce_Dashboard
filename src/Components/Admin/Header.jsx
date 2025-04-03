@@ -95,15 +95,6 @@ const Header = ({ handleDrawerToggle }) => {
 
             socket.emit("join", user.id);
 
-            // Listen for order status updates (for users)
-            socket.on("orderStatusUpdated", (data) => {
-                const { orderId, newStatus, updatedAt } = data;
-                setNotifications((prevNotifications) => [
-                    ...prevNotifications,
-                    { orderId, newStatus, updatedAt, isRead: false },
-                ]);
-                setUnreadCount((prev) => prev + 1);
-            });
 
             // Listen for new order placed (for admins)
             if (user?.role === "admin") {
