@@ -1,5 +1,5 @@
 ﻿import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import AxiosInstance from '../api/axiosInstance.js';
+import axiosInstance from '../api/axiosInstance.js';
 import { toast } from 'react-toastify';
 
 // Async thunk for login
@@ -7,7 +7,7 @@ export const loginUser = createAsyncThunk(
     'auth/loginUser',
     async (credentials, { rejectWithValue }) => {
         try {
-            const response = await AxiosInstance.publicAxios.post('/admin/login', credentials);
+            const response = await axiosInstance.publicAxios.post('/admin/login', credentials);
 
             const { token, refreshToken, user } = response.data;
 
@@ -28,7 +28,7 @@ export const registerUser = createAsyncThunk(
     'auth/registerUser',
     async (userDetails, { rejectWithValue }) => {
         try {
-            const response = await AxiosInstance.publicAxios.post('/auth/register', userDetails);
+            const response = await axiosInstance.publicAxios.post('/auth/register', userDetails);
             const { token, refreshToken, user } = response.data;
 
             // Store token and refresh token in localStorage
@@ -48,7 +48,7 @@ export const verifyUser = createAsyncThunk(
     async ({ verificationCode }, { rejectWithValue }) => {
         try {
             // Send userId and verificationCode to the backend for verification
-            const response = await AxiosInstance.authAxios.post('/auth/verify', {  verificationCode });
+            const response = await axiosInstance.authAxios.post('/auth/verify', {  verificationCode });
 
             // Assuming you will return user data after successful verification
             const { user, message } = response.data;
@@ -66,7 +66,7 @@ export const getUserProfile = createAsyncThunk(
     'auth/getUserProfile',
     async (_, { rejectWithValue }) => {  // ✅ Removed extra comma
         try {
-            const response = await AxiosInstance.authAxios.get('/auth/profile');
+            const response = await axiosInstance.authAxios.get('/auth/profile');
             const user = response.data.user;
 
             return { user };
@@ -81,7 +81,7 @@ export const updateUserInfo = createAsyncThunk(
     'auth/updateUserInfo',
     async (userInfo, { rejectWithValue }) => {
         try {
-            const response = await AxiosInstance.authAxios.put('/users/profile', userInfo);
+            const response = await axiosInstance.authAxios.put('/users/profile', userInfo);
             return response.data;
         } catch (error) {
             return rejectWithValue(error.response?.data?.message || 'Update failed');
@@ -94,7 +94,7 @@ export const logoutUserApi = createAsyncThunk(
     'auth/logoutUserApi',
     async (_, {rejectWithValue }) => {
         try {
-            await AxiosInstance.publicAxios.post('/auth/logout');
+            await axiosInstance.publicAxios.post('/auth/logout');
 
             // Clear local storage
             localStorage.removeItem('token');
@@ -113,11 +113,11 @@ export const refreshToken = createAsyncThunk(
     async (_, { rejectWithValue }) => {
         const storedRefreshToken = localStorage.getItem('refreshToken');
         if (!storedRefreshToken) {
-            return rejectWithValue('No refresh token found');
+            return rejectWithValue('No refresh token found');   
         }
 
         try {
-            const response = await AxiosInstance.refreshTokenAxios.post('/auth/refresh', { refreshToken: storedRefreshToken });
+            const response = await axiosInstance.refreshTokenAxios.post('/auth/refresh', { refreshToken: storedRefreshToken });
             const { token, refreshToken } = response.data;
 
             // Update tokens in local storage

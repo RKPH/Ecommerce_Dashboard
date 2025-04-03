@@ -1,5 +1,3 @@
-
-
 services:
   dashboard-app:
     build: .
@@ -10,6 +8,7 @@ services:
       - .env
     environment:
       - REACT_APP_API_URL=${REACT_APP_API_URL}
+      - VITE_BASE_URL=${VITE_BASE_URL}
     volumes:
       - .:/app
       - /app/node_modules

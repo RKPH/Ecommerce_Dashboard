@@ -88,7 +88,7 @@ function AdminLogin() {
                                     className="w-full rounded-lg bg-purple-600 hover:bg-purple-700 focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50 transition"
                                     disabled={isLoading}
                                 >
-                                    {isLoading ? "Logging in..." : "Log in"}
+                                    {isLoading ? "Logginggg in..." : "Log in"}
                                 </Button>
                             </div>
                         </form>

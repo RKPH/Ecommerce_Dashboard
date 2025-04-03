@@ -17,4 +17,4 @@ COPY . .
 EXPOSE 5174
 
 # Start Vite development server on port 5174
-CMD ["npm", "run", "dev", "--", "--host", "--port", "5174"]
+CMD ["npm", "run", "dev", "--", "--host"]

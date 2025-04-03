@@ -2,7 +2,7 @@
 import { toast } from "react-toastify";
 
 // Base URL for API requests
-const BASE_URL = "http://localhost:3000/api/v1";
+const BASE_URL = 'https://backend.d2f.io.vn/api/v1';
 
 // Function to get the token from localStorage
 const getToken = () => localStorage.getItem("token");
