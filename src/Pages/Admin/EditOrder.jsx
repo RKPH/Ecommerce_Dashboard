@@ -525,7 +525,7 @@ const EditOrder = () => {
                         </div>
 
                         <div className="space-y-4 p-4">
-                            <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-2">
+                            <div className="flex flex-col sm:flex-row justify-start space-y-2 sm:space-y-0 sm:space-x-2">
                                 <select
                                     onChange={(e) => handleActionSelect(e.target.value)}
                                     className="w-full sm:w-48 p-2 border border-gray-300 dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-blue-400 dark:focus:ring-purple-500 text-base bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200"

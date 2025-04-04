@@ -47,8 +47,25 @@ const MostOrderedProducts = () => {
     const [category, setCategory] = useState("All");
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [categories, setCategories] = useState([]);
+    const [categoriesLoading, setCategoriesLoading] = useState(true);
 
-    const categories = ["All", "electronics", "appliances"];
+    useEffect(() => {
+        const fetchCategories = async () => {
+            try {
+                const response = await axiosInstance.normalAxios.get("/products/categories");
+                if (response.data.status === "success") {
+                    setCategories(["All", ...response.data.data]);
+                }
+            } catch (error) {
+                console.error("Failed to fetch categories", error);
+            } finally {
+                setCategoriesLoading(false);
+            }
+        };
+
+        fetchCategories();
+    }, []);
 
     const fetchProducts = async () => {
         setLoading(true);
@@ -82,10 +99,14 @@ const MostOrderedProducts = () => {
                 <select
                     value={category}
                     onChange={(e) => setCategory(e.target.value)}
-                    className="p-2 border rounded dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                    disabled={categoriesLoading}
+                    className="w-full sm:w-32 md:w-36 lg:w-40 px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm transition-colors duration-200 hover:bg-gray-200 dark:hover:bg-gray-600"
                 >
+                    <option value="" disabled className="dark:bg-gray-700 dark:text-gray-200">
+                        {categoriesLoading ? "Loading..." : "Select Category"}
+                    </option>
                     {categories.map((cat) => (
-                        <option key={cat} value={cat} className="dark:bg-gray-800">
+                        <option key={cat} value={cat} className="dark:bg-gray-700 dark:text-gray-200">
                             {cat}
                         </option>
                     ))}
@@ -112,9 +133,9 @@ const MostOrderedProducts = () => {
                         </div>
                     ))
                 ) : products.length > 0 ? (
-                    products.map((product) => (
+                    products.map((product,Index) => (
                         <div
-                            key={product.product_id}
+                            key={Index}
                             className="flex flex-col sm:flex-row sm:justify-between items-start sm:items-center p-4 bg-gray-50 dark:bg-gray-900 rounded-lg hover:shadow-lg transition duration-300 space-y-4 sm:space-y-0"
                         >
                             {/* Product Image & Info */}

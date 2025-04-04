@@ -32,19 +32,18 @@ const MostRatedProducts = () => {
 
     return (
         <div className="bg-white dark:bg-gray-800  rounded-2xl border border-gray-200 dark:border-gray-700 shadow-md">
-
             <div className="flex items-center gap-x-2 mb-6 border-b p-4">
                 <StarPurple500Icon />
                 <h3 className="text-base font-semibold dark:text-white"> Most Rated </h3>
             </div>
 
             <div className="space-y-4">
-                {mostRated.map((product) => {
+                {mostRated.map((product, index) => {
                     const isLowRating = product.averageRating < 2;
 
                     return (
                         <div
-                            key={product.productID}
+                            key={index}
                             className="flex flex-col sm:flex-row sm:justify-between items-start sm:items-center p-4 bg-gray-50 dark:bg-gray-900 rounded-lg hover:shadow-lg transition duration-300 space-y-4 sm:space-y-0"
                         >
                             {/* Product Image & Info */}
@@ -69,7 +68,6 @@ const MostRatedProducts = () => {
                                     </div>
                                 </div>
                             </div>
-
                         </div>
                     );
                 })}
