@@ -321,7 +321,7 @@ const UserManagement = () => {
                         }}
                         className="w-full sm:w-32 md:w-36 lg:w-40 px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm transition-colors duration-200 hover:bg-gray-200 dark:hover:bg-gray-600"
                     >
-                        <option value="" className="dark:bg-gray-700 dark:text-gray-200">All Roles</option>
+                        <option value="" className="dark:bg-gray-700 dark:text-gray-200">All roles</option>
                         {[...new Set(allUsers.map((u) => u.role))].map((role) => (
                             <option key={role} value={role} className="dark:bg-gray-700 dark:text-gray-200">
                                 {role}
