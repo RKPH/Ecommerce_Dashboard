@@ -422,7 +422,7 @@ const AdminOrders = () => {
                                         key={order._id}
                                         className="border-t border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700"
                                     >
-                                        <td className="p-2 sm:p-3 truncate">{order._id}</td>
+                                        <td className="p-2 sm:p-3 truncate">{order.order_id}</td>
                                         <td className="p-2 sm:p-3 truncate">{order.user?.name || "N/A"}</td>
                                         <td className="p-2 sm:p-3 truncate">
                                             ${order.totalPrice?.toFixed(2) || "0.00"}

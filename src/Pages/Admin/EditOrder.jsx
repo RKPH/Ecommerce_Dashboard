@@ -240,16 +240,18 @@ const EditOrder = () => {
     // Define possible next steps based on current status
     const getNextSteps = () => {
         const currentStatus = order.status;
+        const paymentMethod = order.PaymentMethod?.toLowerCase();
+        
         switch (currentStatus) {
             case "Pending":
                 return [
-                    { label: "Wait for payment", description: "Wait until customer confirm payment process", date: "Pending payment" },
-                    null, // No "next-next" step for Pending
+                    { label: "Order is ready to be delivered", description: "Preparing for delivery", date: "Preparing for delivery" },
+                    { label: "Waiting for delivery", description: "Pending delivery", date: "Pending delivery" },
                 ];
             case "Confirmed":
                 return [
-                    { label: "Order is ready to be delivered", description: "Preparing for delivery", date: "Preparing for delivery" },
-                    { label: "Waiting for delivery", description: "Pending delivery", date: "Pending delivery" },
+                    { label: "Order is being delivered", description: "In transit", date: "In transit" },
+                    { label: "Order delivered", description: "Delivery completed", date: "Delivery completed" },
                 ];
             case "Delivered":
             case "Cancelled":
@@ -361,7 +363,7 @@ const EditOrder = () => {
     return (
         <div className="min-h-full p-4 sm:p-6 bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200">
             <div className="flex flex-col sm:flex-row justify-between items-center mb-5 space-y-2 sm:space-y-0">
-                <h1 className="text-xl font-bold text-black dark:text-white">Order #{orderId}</h1>
+                <h1 className="text-xl font-bold text-black dark:text-white">Order #{order.order_id}</h1>
                 <nav className="text-base text-gray-600 dark:text-gray-300">
                     <Link to="/admin/dashboard" className="text-[#5671F0] hover:underline">Dashboard</Link>{" > "}
                     <Link to="/admin/orders" className="text-[#5671F0] hover:underline">Orders</Link>{" > "}
