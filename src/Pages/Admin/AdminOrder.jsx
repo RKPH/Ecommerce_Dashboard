@@ -337,12 +337,12 @@ const AdminOrders = () => {
                         }}
                         className="w-full sm:w-32 md:w-36 lg:w-40 px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm transition-colors duration-200 hover:bg-gray-200 dark:hover:bg-gray-600"
                     >
-                        <option value="" className="dark:bg-gray-700 dark:text-gray-200">All Statuses</option>
+                        <option value="" className="dark:bg-gray-700 dark:text-gray-200">All statuses</option>
                         <option value="Pending" className="dark:bg-gray-700 dark:text-gray-200">Pending</option>
                         <option value="Confirmed" className="dark:bg-gray-700 dark:text-gray-200">Confirmed</option>
                         <option value="Delivered" className="dark:bg-gray-700 dark:text-gray-200">Delivered</option>
                         <option value="Cancelled" className="dark:bg-gray-700 dark:text-gray-200">Cancelled</option>
-                        <option value="CancelledByAdmin" className="dark:bg-gray-700 dark:text-gray-200">Cancelled by Admin</option>
+                        <option value="CancelledByAdmin" className="dark:bg-gray-700 dark:text-gray-200">Cancelled by admin</option>
                     </select>
 
                     {/* Payment Method Filter */}
@@ -354,7 +354,7 @@ const AdminOrders = () => {
                         }}
                         className="w-full sm:w-32 md:w-36 lg:w-40 px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm transition-colors duration-200 hover:bg-gray-200 dark:hover:bg-gray-600"
                     >
-                        <option value="" className="dark:bg-gray-700 dark:text-gray-200">All Payment Methods</option>
+                        <option value="" className="dark:bg-gray-700 dark:text-gray-200">All payment methods</option>
                         <option value="cod" className="dark:bg-gray-700 dark:text-gray-200">COD</option>
                         <option value="momo" className="dark:bg-gray-700 dark:text-gray-200">MoMo</option>
                     </select>
@@ -368,7 +368,7 @@ const AdminOrders = () => {
                         }}
                         className="w-full sm:w-32 md:w-36 lg:w-40 px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm transition-colors duration-200 hover:bg-gray-200 dark:hover:bg-gray-600"
                     >
-                        <option value="" className="dark:bg-gray-700 dark:text-gray-200">All Paying Statuses</option>
+                        <option value="" className="dark:bg-gray-700 dark:text-gray-200">All paying statuses</option>
                         <option value="Paid" className="dark:bg-gray-700 dark:text-gray-200">Paid</option>
                         <option value="Unpaid" className="dark:bg-gray-700 dark:text-gray-200">Unpaid</option>
                     </select>
@@ -422,7 +422,7 @@ const AdminOrders = () => {
                                         key={order._id}
                                         className="border-t border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700"
                                     >
-                                        <td className="p-2 sm:p-3 truncate">{order._id}</td>
+                                        <td className="p-2 sm:p-3 truncate">{order.order_id}</td>
                                         <td className="p-2 sm:p-3 truncate">{order.user?.name || "N/A"}</td>
                                         <td className="p-2 sm:p-3 truncate">
                                             ${order.totalPrice?.toFixed(2) || "0.00"}
@@ -454,7 +454,7 @@ const AdminOrders = () => {
                                         <td className="p-2 sm:p-3 flex flex-row space-x-2">
                                             <button
                                                 className="text-green-500 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 p-2 rounded-lg bg-green-100 dark:bg-green-900/20 flex items-center justify-center w-10 h-10"
-                                                onClick={() => navigate(`/admin/orders/edit/${order._id}`)}
+                                                onClick={() => navigate(`/admin/orders/edit/${order.order_id}`)}
                                             >
                                                 <Pencil size={20} />
                                             </button>

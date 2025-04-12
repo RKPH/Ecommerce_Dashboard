@@ -80,7 +80,7 @@ const EditUser = () => {
 
         try {
             const response = await axiosInstance.normalAxios.post("/images/upload", formData);
-            const imageUrl = response.data.imageUrl;
+            const imageUrl = response.data.urlMinio;
             setUser({ ...user, avatar: imageUrl });
             setImageFile(file);
         } catch (error) {

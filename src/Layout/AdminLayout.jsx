@@ -50,7 +50,7 @@ const AdminLayout = ({ children }) => {
 
                     <footer className="w-full bg-gray-200 dark:bg-gray-800 text-gray-600 dark:text-gray-300 py-4 text-center text-sm">
                         <div className="container mx-auto flex justify-between items-center px-4">
-                            <span>2025 © Shopy - Getappui.com</span>
+                            <span>2025 D2F-Alright reserved</span>
                             <div className="space-x-4">
                                 <a href="/about" className="hover:text-gray-900 dark:hover:text-white">
                                     About

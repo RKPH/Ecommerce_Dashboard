@@ -11,6 +11,7 @@ import ShoppingBagOutlinedIcon from '@mui/icons-material/ShoppingBagOutlined';
 import PaymentsTwoToneIcon from '@mui/icons-material/PaymentsTwoTone';
 import VisibilityRoundedIcon from '@mui/icons-material/VisibilityRounded';
 
+
 // Function to format date as "HH:MM:SS,MM/DD/YY"
 const formatDate = (date) => {
     const vietnamDate = new Date(date);
@@ -38,6 +39,14 @@ const EditOrder = () => {
     });
     const orderDetailsRef = useRef(null);
     const trackingRef = useRef(null);
+    const [modal, setModal] = useState({
+        isOpen: false,
+        type: '',
+        title: '',
+        message: '',
+        onClose: () => setModal({ ...modal, isOpen: false }),
+    });
+    const [selectedAction, setSelectedAction] = useState(null);
 
     useEffect(() => {
         const fetchOrderDetails = async () => {
@@ -117,6 +126,10 @@ const EditOrder = () => {
                 }
 
                 toast.success(`Order status updated to ${newStatus}`);
+                // Add a small delay before navigation to ensure the update is complete
+                setTimeout(() => {
+                    navigate("/admin/orders", { replace: true });
+                }, 500);
             } else {
                 throw new Error(response.data.message || "Failed to update status");
             }
@@ -171,6 +184,34 @@ const EditOrder = () => {
         }
     };
 
+    const handleActionSelect = (action) => {
+        setSelectedAction(action);
+        if (action === "CancelledByAdmin") {
+            setModal({
+                isOpen: true,
+                type: 'cancel',
+                title: 'Cancel Order',
+                message: 'Please provide a reason for cancelling this order.',
+                onClose: () => setModal({ ...modal, isOpen: false }),
+            });
+        } else {
+            handleStatusUpdate(action);
+        }
+    };
+
+    const handleModalConfirm = () => {
+        if (!cancellationReason.trim()) {
+            toast.error("Please provide a reason for cancelling this order.");
+            return;
+        }
+        if (!selectedAction) {
+            toast.error("No action selected");
+            return;
+        }
+        setModal({ ...modal, isOpen: false });
+        handleStatusUpdate(selectedAction);
+    };
+
     if (loading) {
         return <div className="flex justify-center items-center h-screen text-base text-gray-800 dark:text-gray-200">Loading...</div>;
     }
@@ -199,16 +240,18 @@ const EditOrder = () => {
     // Define possible next steps based on current status
     const getNextSteps = () => {
         const currentStatus = order.status;
+        const paymentMethod = order.PaymentMethod?.toLowerCase();
+        
         switch (currentStatus) {
             case "Pending":
                 return [
-                    { label: "Wait for payment", description: "Wait until customer confirm payment process", date: "Pending payment" },
-                    null, // No "next-next" step for Pending
+                    { label: "Order is ready to be delivered", description: "Preparing for delivery", date: "Preparing for delivery" },
+                    { label: "Waiting for delivery", description: "Pending delivery", date: "Pending delivery" },
                 ];
             case "Confirmed":
                 return [
-                    { label: "Order is ready to be delivered", description: "Preparing for delivery", date: "Preparing for delivery" },
-                    { label: "Waiting for delivery", description: "Pending delivery", date: "Pending delivery" },
+                    { label: "Order is being delivered", description: "In transit", date: "In transit" },
+                    { label: "Order delivered", description: "Delivery completed", date: "Delivery completed" },
                 ];
             case "Delivered":
             case "Cancelled":
@@ -320,7 +363,7 @@ const EditOrder = () => {
     return (
         <div className="min-h-full p-4 sm:p-6 bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200">
             <div className="flex flex-col sm:flex-row justify-between items-center mb-5 space-y-2 sm:space-y-0">
-                <h1 className="text-xl font-bold text-black dark:text-white">Order #{orderId}</h1>
+                <h1 className="text-xl font-bold text-black dark:text-white">Order #{order.order_id}</h1>
                 <nav className="text-base text-gray-600 dark:text-gray-300">
                     <Link to="/admin/dashboard" className="text-[#5671F0] hover:underline">Dashboard</Link>{" > "}
                     <Link to="/admin/orders" className="text-[#5671F0] hover:underline">Orders</Link>{" > "}
@@ -484,41 +527,23 @@ const EditOrder = () => {
                         </div>
 
                         <div className="space-y-4 p-4">
-                            {order.status !== "Delivered" && (
-                                <input
-                                    type="text"
-                                    placeholder="Describe the reason for cancellation"
-                                    className="w-full p-2 border border-gray-300 dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-blue-400 dark:focus:ring-purple-500 text-base bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200"
-                                    value={cancellationReason}
-                                    onChange={(e) => setCancellationReason(e.target.value)}
-                                    disabled={order.status === "Cancelled" || order.status === "CancelledByAdmin"}
-                                />
-                            )}
-                            <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-2">
-                                {order.status === "Pending" && (
-                                    <button
-                                        onClick={() => handleStatusUpdate("Confirmed")}
-                                        className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 focus:outline-none text-base w-28"
-                                    >
-                                        Confirm
-                                    </button>
-                                )}
-                                {["Pending", "Confirmed"].includes(order.status) && (
-                                    <button
-                                        onClick={() => handleStatusUpdate("CancelledByAdmin")}
-                                        className="px-3 py-1 bg-red-700 text-white rounded hover:bg-red-800 dark:hover:bg-red-600 focus:outline-none text-base w-28"
-                                    >
-                                        Cancel
-                                    </button>
-                                )}
-                                {order.status === "Confirmed" && (
-                                    <button
-                                        onClick={() => handleStatusUpdate("Delivered")}
-                                        className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600 focus:outline-none text-base w-28"
-                                    >
-                                        Deliver
-                                    </button>
-                                )}
+                            <div className="flex flex-col sm:flex-row justify-start space-y-2 sm:space-y-0 sm:space-x-2">
+                                <select
+                                    onChange={(e) => handleActionSelect(e.target.value)}
+                                    className="w-full sm:w-48 p-2 border border-gray-300 dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-blue-400 dark:focus:ring-purple-500 text-base bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200"
+                                    value=""
+                                >
+                                    <option value="" disabled>Select Action</option>
+                                    {order.status === "Pending" && (
+                                        <option value="Confirmed">Confirm Order</option>
+                                    )}
+                                    {["Pending", "Confirmed"].includes(order.status) && (
+                                        <option value="CancelledByAdmin">Cancel Order</option>
+                                    )}
+                                    {order.status === "Confirmed" && (
+                                        <option value="Delivered">Mark as Delivered</option>
+                                    )}
+                                </select>
                             </div>
                         </div>
                     </div>
@@ -581,6 +606,45 @@ const EditOrder = () => {
                     )}
                 </div>
             </div>
+
+            {/* Existing Modal */}
+            {modal.isOpen && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 max-w-md w-full mx-4">
+                        <h3 className="text-lg font-medium text-gray-900 dark:text-gray-200 mb-4">
+                            {modal.title}
+                        </h3>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                            {modal.message}
+                        </p>
+                        {modal.type === 'cancel' && (
+                            <textarea
+                                className="w-full p-2 border border-gray-300 dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-blue-400 dark:focus:ring-purple-500 text-base bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200"
+                                rows="4"
+                                value={cancellationReason}
+                                onChange={(e) => setCancellationReason(e.target.value)}
+                                placeholder="Enter cancellation reason..."
+                            />
+                        )}
+                        <div className="mt-4 flex justify-end space-x-2">
+                            <button
+                                type="button"
+                                className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-200 rounded hover:bg-gray-200 dark:hover:bg-gray-600 focus:outline-none"
+                                onClick={modal.onClose}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="button"
+                                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 focus:outline-none"
+                                onClick={handleModalConfirm}
+                            >
+                                Confirm
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

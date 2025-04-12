@@ -99,10 +99,11 @@ const Header = ({ handleDrawerToggle }) => {
             // Listen for new order placed (for admins)
             if (user?.role === "admin") {
                 socket.on("newOrderPlaced", (data) => {
-                    const { orderId, userId, totalPrice, paymentMethod, createdAt } = data;
+                    const {id, orderId, userId, totalPrice, paymentMethod, createdAt } = data;
                     setNotifications((prevNotifications) => [
                         ...prevNotifications,
                         {
+                            id,
                             orderId,
                             userId,
                             totalPrice,
@@ -269,7 +270,7 @@ const Header = ({ handleDrawerToggle }) => {
                                             {notification.title ? (
                                                 // Admin notification (new order placed)
                                                 <Link
-                                                    to={`/admin/orders/edit/${notification.orderId}`}
+                                                    to={`/admin/orders/edit/${notification.id}`}
                                                     className="block"
                                                     onClick={() => {
                                                         if (!notification.isRead) {
