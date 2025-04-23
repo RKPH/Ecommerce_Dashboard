@@ -270,7 +270,7 @@ const Header = ({ handleDrawerToggle }) => {
                                             {notification.title ? (
                                                 // Admin notification (new order placed)
                                                 <Link
-                                                    to={`/admin/orders/edit/${notification.id}`}
+                                                    to={`/admin/orders/edit/${notification.orderId}`}
                                                     className="block"
                                                     onClick={() => {
                                                         if (!notification.isRead) {

@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useLayoutEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import AxiosInstance from "../../api/axiosInstance";
 import { toast } from "react-toastify";
-import { Steps } from "antd"; // Import Ant Design Steps component
+import { Steps } from "antd";
 import RouteIcon from '@mui/icons-material/Route';
 import PersonIcon from '@mui/icons-material/Person';
 import PhoneIcon from '@mui/icons-material/Phone';
@@ -11,17 +11,16 @@ import ShoppingBagOutlinedIcon from '@mui/icons-material/ShoppingBagOutlined';
 import PaymentsTwoToneIcon from '@mui/icons-material/PaymentsTwoTone';
 import VisibilityRoundedIcon from '@mui/icons-material/VisibilityRounded';
 
-
-// Function to format date as "HH:MM:SS,MM/DD/YY"
+// Format date as "HH:MM:SS,MM/DD/YY"
 const formatDate = (date) => {
     const vietnamDate = new Date(date);
     vietnamDate.setHours(vietnamDate.getHours());
     const hours = String(vietnamDate.getHours()).padStart(2, '0');
     const minutes = String(vietnamDate.getMinutes()).padStart(2, '0');
     const seconds = String(vietnamDate.getSeconds()).padStart(2, '0');
-    const month = String(vietnamDate.getMonth() + 1).padStart(2, '0'); // Months are 0-based
+    const month = String(vietnamDate.getMonth() + 1).padStart(2, '0');
     const day = String(vietnamDate.getDate()).padStart(2, '0');
-    const year = String(vietnamDate.getFullYear()).slice(-2); // Last two digits of the year
+    const year = String(vietnamDate.getFullYear()).slice(-2);
     return `${hours}:${minutes}:${seconds},${month}/${day}/${year}`;
 };
 
@@ -104,8 +103,9 @@ const EditOrder = () => {
 
             if (response.status === 200) {
                 const actionText = newStatus === "Confirmed" ? "Order is confirmed" :
+                    newStatus === "Delivering" ? "Order is being delivered" :
                     newStatus === "Delivered" ? "Order is delivered successfully" :
-                        newStatus === "CancelledByAdmin" ? "Order is cancelled by admin" : `Order is ${newStatus}`;
+                    newStatus === "CancelledByAdmin" ? "Order is cancelled by admin" : `Order is ${newStatus}`;
 
                 const formattedDate = formatDate(new Date());
 
@@ -126,7 +126,6 @@ const EditOrder = () => {
                 }
 
                 toast.success(`Order status updated to ${newStatus}`);
-                // Add a small delay before navigation to ensure the update is complete
                 setTimeout(() => {
                     navigate("/admin/orders", { replace: true });
                 }, 500);
@@ -220,7 +219,6 @@ const EditOrder = () => {
         return <div className="text-center text-red-500 dark:text-red-400 mt-10 text-base">Order not found</div>;
     }
 
-    // Calculate subtotal as price * quantity for all products
     const subtotal = order.products.reduce((acc, item) => {
         const price = item.product.price || 0;
         const quantity = item.quantity || 0;
@@ -237,26 +235,28 @@ const EditOrder = () => {
 
     const activeStepIndex = steps.length - 1;
 
-    // Define possible next steps based on current status
     const getNextSteps = () => {
         const currentStatus = order.status;
-        const paymentMethod = order.PaymentMethod?.toLowerCase();
-        
         switch (currentStatus) {
             case "Pending":
                 return [
-                    { label: "Order is ready to be delivered", description: "Preparing for delivery", date: "Preparing for delivery" },
-                    { label: "Waiting for delivery", description: "Pending delivery", date: "Pending delivery" },
+                    { label: "Order is confirmed", description: "Awaiting confirmation", date: "Awaiting confirmation" },
+                    { label: "Order is being delivered", description: "Preparing for delivery", date: "Preparing for delivery" },
                 ];
             case "Confirmed":
                 return [
                     { label: "Order is being delivered", description: "In transit", date: "In transit" },
                     { label: "Order delivered", description: "Delivery completed", date: "Delivery completed" },
                 ];
+            case "Delivering":
+                return [
+                    { label: "Order delivered", description: "Delivery completed", date: "Delivery completed" },
+                    null,
+                ];
             case "Delivered":
             case "Cancelled":
             case "CancelledByAdmin":
-                return [null, null]; // No next steps for final states
+                return [null, null];
             default:
                 return [null, null];
         }
@@ -264,18 +264,16 @@ const EditOrder = () => {
 
     const [nextStep, nextNextStep] = getNextSteps();
 
-    // Combine current steps with future steps for the Ant Design Steps component
     const allSteps = [
         ...steps.map((step, index) => ({
             title: (
-                <span className={index === activeStepIndex ? "text-red-500 font-medium" : "font-medium"}>{step.label}</span>
+                <span className={index === activeStepIndex ? "text-red-500 font-medium" : "font-medium"}>
+                    {step.label}
+                </span>
             ),
             description: (
                 <div className="text-sm text-gray-500">
                     <div>{step.date}</div>
-                    {index === activeStepIndex && nextStep && (
-                        <div className="mt-1">{nextStep.description}</div>
-                    )}
                 </div>
             ),
         })),
@@ -284,7 +282,6 @@ const EditOrder = () => {
             description: (
                 <div className="text-sm text-gray-500">
                     <div>{nextStep.date}</div>
-                    <div className="mt-1">{nextStep.description}</div>
                 </div>
             ),
         }] : []),
@@ -293,7 +290,6 @@ const EditOrder = () => {
             description: (
                 <div className="text-sm text-gray-500">
                     <div>{nextNextStep.date}</div>
-                    <div className="mt-1">{nextNextStep.description}</div>
                 </div>
             ),
         }] : []),
@@ -303,6 +299,7 @@ const EditOrder = () => {
         switch (status) {
             case "Pending": return <span className="px-2 py-1 bg-orange-100 text-orange-600 dark:bg-orange-900 dark:text-orange-300 rounded text-base">Place Order</span>;
             case "Confirmed": return <span className="px-2 py-1 bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-300 rounded text-base">Confirmed</span>;
+            case "Delivering": return <span className="px-2 py-1 bg-purple-100 text-purple-600 dark:bg-purple-900 dark:text-purple-300 rounded text-base">Delivering</span>;
             case "Delivered": return <span className="px-2 py-1 bg-green-100 text-green-600 dark:bg-green-900 dark:text-green-300 rounded text-base">Delivered</span>;
             case "Cancelled": return <span className="px-2 py-1 bg-red-100 text-red-600 dark:bg-red-900 dark:text-red-300 rounded text-base">Cancelled</span>;
             case "CancelledByAdmin": return <span className="px-2 py-1 bg-red-200 text-red-800 dark:bg-red-800 dark:text-red-200 rounded text-base">Cancelled by Admin</span>;
@@ -537,11 +534,14 @@ const EditOrder = () => {
                                     {order.status === "Pending" && (
                                         <option value="Confirmed">Confirm Order</option>
                                     )}
-                                    {["Pending", "Confirmed"].includes(order.status) && (
-                                        <option value="CancelledByAdmin">Cancel Order</option>
-                                    )}
                                     {order.status === "Confirmed" && (
+                                        <option value="Delivering">Mark as Delivering</option>
+                                    )}
+                                    {order.status === "Delivering" && (
                                         <option value="Delivered">Mark as Delivered</option>
+                                    )}
+                                    {["Pending", "Confirmed", "Delivering"].includes(order.status) && (
+                                        <option value="CancelledByAdmin">Cancel Order</option>
                                     )}
                                 </select>
                             </div>
@@ -607,7 +607,6 @@ const EditOrder = () => {
                 </div>
             </div>
 
-            {/* Existing Modal */}
             {modal.isOpen && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 max-w-md w-full mx-4">

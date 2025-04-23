@@ -357,6 +357,7 @@ const AdminOrders = () => {
                         <option value="" className="dark:bg-gray-700 dark:text-gray-200">All payment methods</option>
                         <option value="cod" className="dark:bg-gray-700 dark:text-gray-200">COD</option>
                         <option value="momo" className="dark:bg-gray-700 dark:text-gray-200">MoMo</option>
+                        <option value="payos" className="dark:bg-gray-700 dark:text-gray-200">Bank</option>
                     </select>
 
                     {/* Paying Status Filter */}
