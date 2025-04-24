@@ -15,6 +15,7 @@ import EditOrder from "../Pages/Admin/EditOrder.jsx";
 import AdminUser from "../Pages/Admin/AdminUser.jsx";
 import EditUser from "../Pages/Admin/EditUser.jsx";
 import AddUser from "../Pages/Admin/AddUser.jsx";
+import AdminRefundRequests from "../Pages/Admin/AdminRefundOrder.jsx";
 
 const AdminPrivateRoute = ({ children }) => {
     const isAuthenticated = localStorage.getItem("token"); // Check if user is logged in
@@ -99,6 +100,15 @@ export const adminRoutes = [
         component: () => (
             <AdminPrivateRoute>
                 <EditOrder/>
+            </AdminPrivateRoute>
+        ),
+        layout: AdminLayout,
+    },
+    {
+        path: "/admin/refunds",
+        component: () => (
+            <AdminPrivateRoute>
+               <AdminRefundRequests/>
             </AdminPrivateRoute>
         ),
         layout: AdminLayout,

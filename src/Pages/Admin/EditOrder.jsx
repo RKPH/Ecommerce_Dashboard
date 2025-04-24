@@ -31,11 +31,6 @@ const EditOrder = () => {
     const [loading, setLoading] = useState(true);
     const [showProductRows, setShowProductRows] = useState(true);
     const [cancellationReason, setCancellationReason] = useState("");
-    const [refundInfo, setRefundInfo] = useState({
-        bankAccountName: "",
-        bankName: "",
-        accountNumber: "",
-    });
     const orderDetailsRef = useRef(null);
     const trackingRef = useRef(null);
     const [modal, setModal] = useState({
@@ -55,9 +50,6 @@ const EditOrder = () => {
                     setOrder(response.data.data);
                     if (response.data.data.cancellationReason) {
                         setCancellationReason(response.data.data.cancellationReason);
-                    }
-                    if (response.data.data.refundInfo) {
-                        setRefundInfo(response.data.data.refundInfo);
                     }
                 } else {
                     throw new Error(response.data.message || "Failed to fetch order");
@@ -104,8 +96,8 @@ const EditOrder = () => {
             if (response.status === 200) {
                 const actionText = newStatus === "Confirmed" ? "Order is confirmed" :
                     newStatus === "Delivering" ? "Order is being delivered" :
-                    newStatus === "Delivered" ? "Order is delivered successfully" :
-                    newStatus === "CancelledByAdmin" ? "Order is cancelled by admin" : `Order is ${newStatus}`;
+                        newStatus === "Delivered" ? "Order is delivered successfully" :
+                            newStatus === "CancelledByAdmin" ? "Order is cancelled by admin" : `Order is ${newStatus}`;
 
                 const formattedDate = formatDate(new Date());
 
@@ -158,28 +150,6 @@ const EditOrder = () => {
         } catch (error) {
             console.error("Error updating payment status:", error);
             toast.error(error.response?.data?.message || "Failed to update payment status");
-        }
-    };
-
-    const handleRefundStatusUpdate = async (newRefundStatus) => {
-        try {
-            const response = await AxiosInstance.authAxios.put(
-                `/admin/orders/updateRefundStatus/${orderId}`,
-                { refundStatus: newRefundStatus }
-            );
-
-            if (response.status === 200) {
-                setOrder((prevOrder) => ({
-                    ...prevOrder,
-                    refundStatus: newRefundStatus,
-                }));
-                toast.success(`Refund status updated to ${newRefundStatus}`);
-            } else {
-                throw new Error("Failed to update refund status");
-            }
-        } catch (error) {
-            console.error("Error updating refund status:", error);
-            toast.error(error.response?.data?.message || "Failed to update refund status");
         }
     };
 
@@ -319,23 +289,6 @@ const EditOrder = () => {
         }
     };
 
-    const getRefundStatusBadge = (status) => {
-        switch (status) {
-            case "NotInitiated":
-                return <span className="px-2 py-1 bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300 rounded text-base">Not Initiated</span>;
-            case "Pending":
-                return <span className="px-2 py-1 bg-yellow-100 text-yellow-600 dark:bg-yellow-900 dark:text-yellow-300 rounded text-base">Pending</span>;
-            case "Processing":
-                return <span className="px-2 py-1 bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-300 rounded text-base">Processing</span>;
-            case "Completed":
-                return <span className="px-2 py-1 bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300 rounded text-base">Completed</span>;
-            case "Failed":
-                return <span className="px-2 py-1 bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300 rounded text-base">Failed</span>;
-            default:
-                return <span className="px-2 py-1 bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300 rounded text-base">Unknown</span>;
-        }
-    };
-
     const formatShippingAddress = (address) => {
         if (!address) return "Not available";
         if (typeof address === 'string') return address;
@@ -354,8 +307,6 @@ const EditOrder = () => {
             default: return method || "Wallet";
         }
     };
-
-    const refundStatusOptions = ["NotInitiated", "Pending", "Processing", "Completed", "Failed"];
 
     return (
         <div className="min-h-full p-4 sm:p-6 bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200">
@@ -547,63 +498,6 @@ const EditOrder = () => {
                             </div>
                         </div>
                     </div>
-
-                    {order.status === "Cancelled" && order.payingStatus === "Paid" && (
-                        <div className="bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-500 dark:border-yellow-600 rounded-lg shadow dark:shadow-gray-900 p-6">
-                            <h2 className="text-lg font-semibold text-yellow-700 dark:text-yellow-300 mb-4 flex items-center">
-                                <span className="mr-2">⚠️</span> Refund Request
-                            </h2>
-                            <div className="space-y-4">
-                                <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm dark:shadow-gray-900">
-                                    <p className="text-base text-gray-800 dark:text-gray-200">
-                                        <span className="font-medium text-gray-900 dark:text-gray-100">Cancellation Reason:</span>{" "}
-                                        <span className="italic text-gray-600 dark:text-gray-400">{order.cancellationReason || "Not specified"}</span>
-                                    </p>
-                                </div>
-
-                                <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm dark:shadow-gray-900">
-                                    <label className="text-base font-medium text-gray-900 dark:text-gray-100 block mb-2">
-                                        Refund Status:
-                                    </label>
-                                    <div className="flex items-center gap-4">
-                                        {getRefundStatusBadge(order.refundStatus || "NotInitiated")}
-                                        <select
-                                            value={order.refundStatus || "NotInitiated"}
-                                            onChange={(e) => handleRefundStatusUpdate(e.target.value)}
-                                            className="w-full p-2 border border-gray-300 dark:border-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-yellow-400 dark:focus:ring-yellow-500 text-base bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200"
-                                            disabled={order.refundStatus === "Completed"}
-                                        >
-                                            {refundStatusOptions.map((status) => (
-                                                <option key={status} value={status} className="dark:bg-gray-800 dark:text-gray-200">{status}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                </div>
-
-                                <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm dark:shadow-gray-900">
-                                    <div className="flex justify-between items-center mb-2">
-                                        <label className="text-base font-medium text-gray-900 dark:text-gray-100 block">
-                                            Refund Information:
-                                        </label>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <p className="text-base text-gray-800 dark:text-gray-200">
-                                            <span className="font-medium text-gray-900 dark:text-gray-100">Bank Account Name:</span>{" "}
-                                            {refundInfo.accountName || "Not provided"}
-                                        </p>
-                                        <p className="text-base text-gray-800 dark:text-gray-200">
-                                            <span className="font-medium text-gray-900 dark:text-gray-100">Bank Name:</span>{" "}
-                                            {refundInfo.bankName || "Not provided"}
-                                        </p>
-                                        <p className="text-base text-gray-800 dark:text-gray-200">
-                                            <span className="font-medium text-gray-900 dark:text-gray-100">Account Number:</span>{" "}
-                                            {refundInfo.accountNumber || "Not provided"}
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    )}
                 </div>
             </div>
 

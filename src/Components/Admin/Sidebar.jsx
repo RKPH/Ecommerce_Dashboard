@@ -15,10 +15,12 @@ import {
     ExpandMore as ExpandMoreIcon,
     ExpandLess as ExpandLessIcon,
     ExitToApp as LogoutIcon,
+
 } from "@mui/icons-material";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { logoutUserApi } from "../../Redux/AuthSlice.js";
+import CurrencyExchangeIcon from '@mui/icons-material/CurrencyExchange';
 import './sidebar.css';
 
 const drawerWidth = 260;
@@ -49,6 +51,7 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle, isSmallScreen, theme }) => {
             items: [
                 { text: "Products", icon: <InventoryIcon />, path: "/admin/products" },
                 { text: "Orders", icon: <ListAltIcon />, path: "/admin/orders" },
+                { text: "Refunds", icon: <CurrencyExchangeIcon/>, path: "/admin/refunds" },
             ],
         },
         {

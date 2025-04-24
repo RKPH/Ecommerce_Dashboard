@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Pencil, File } from "lucide-react";
+import { Pencil } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import {
     FormControl,
@@ -8,7 +8,7 @@ import {
     TextField,
     CircularProgress,
 } from "@mui/material";
-import DownloadForOfflineIcon from "@mui/icons-material/DownloadForOffline"; // Import icon for Export button
+import DownloadForOfflineIcon from "@mui/icons-material/DownloadForOffline";
 import { toast } from "react-toastify";
 import AxiosInstance from "../../api/axiosInstance.js";
 
@@ -23,33 +23,28 @@ const formatDateTime = (dateString) => {
     return `${month}/${day}/${year}, ${hours}:${minutes}`;
 };
 
-// Function to format status text
-const formatStatusText = (status) => {
-    if (status.toLowerCase() === "cancelledbyadmin") {
-        return "Cancelled by Admin";
-    }
-    return status;
+// Function to format refund status text
+const formatRefundStatusText = (status) => {
+    return status || "N/A";
 };
 
-// Function to convert orders data to CSV format
+// Function to convert refund requests to CSV format
 const convertToCSV = (data) => {
-    const headers = ["Order ID,User,Total Price,Status,Payment Status,Payment Method,Created At"];
-    const rows = data.map((order) =>
-        `${order._id},${order.user?.name || "N/A"},${order.totalPrice?.toFixed(2) || "0.00"},${formatStatusText(order.status || "N/A")},${order.payingStatus || "N/A"},${order.PaymentMethod || "N/A"},${order.createdAt ? formatDateTime(order.createdAt) : "N/A"}`
+    const headers = ["Order ID,User,Cancellation Reason,Refund Status,Bank Account Name,Bank Name,Account Number,Created At"];
+    const rows = data.map((request) =>
+        `${request.order_id},${request.user?.name || "N/A"},"${request.cancellationReason || "N/A"}",${formatRefundStatusText(request.refundStatus || "N/A")},${request.refundInfo?.accountName || "N/A"},${request.refundInfo?.bankName || "N/A"},${request.refundInfo?.accountNumber || "N/A"},${request.createdAt ? formatDateTime(request.createdAt) : "N/A"}`
     );
     return [headers, ...rows].join("\n");
 };
 
-const AdminOrders = () => {
-    const [orders, setOrders] = useState([]);
+const AdminRefundRequests = () => {
+    const [requests, setRequests] = useState([]);
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [totalItems, setTotalItems] = useState(0);
     const [itemsPerPage, setItemsPerPage] = useState(10);
     const [searchQuery, setSearchQuery] = useState("");
-    const [statusFilter, setStatusFilter] = useState("");
-    const [paymentMethodFilter, setPaymentMethodFilter] = useState("");
-    const [payingStatusFilter, setPayingStatusFilter] = useState("");
+    const [refundStatusFilter, setRefundStatusFilter] = useState("All"); // Changed to "All" for initial load
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [isDarkMode, setIsDarkMode] = useState(document.documentElement.classList.contains("dark"));
@@ -69,17 +64,17 @@ const AdminOrders = () => {
     useEffect(() => {
         setLoading(true);
         setError(null);
-        fetchOrders()
+        fetchRefundRequests()
             .then(() => setLoading(false))
             .catch((error) => {
-                console.error("Error fetching orders:", error);
+                console.error("Error fetching refund requests:", error);
                 if (error.response?.status !== 404) {
-                    setError(error.message || "Failed to fetch orders");
-                    toast.error(error.response?.data?.message || "Failed to fetch orders");
+                    setError(error.message || "Failed to fetch refund requests");
+                    toast.error(error.response?.data?.message || "Failed to fetch refund requests");
                 }
                 setLoading(false);
             });
-    }, [page, itemsPerPage, searchQuery, statusFilter, paymentMethodFilter, payingStatusFilter]);
+    }, [page, itemsPerPage, searchQuery, refundStatusFilter]);
 
     useEffect(() => {
         if (tableHeaderRef.current) {
@@ -87,30 +82,28 @@ const AdminOrders = () => {
         }
     }, [page, itemsPerPage]);
 
-    const fetchOrders = async () => {
+    const fetchRefundRequests = async () => {
         try {
             const queryParams = new URLSearchParams({
                 page,
                 limit: itemsPerPage,
                 ...(searchQuery && { search: searchQuery }),
-                ...(statusFilter && { status: statusFilter }),
-                ...(paymentMethodFilter && { PaymentMethod: paymentMethodFilter }),
-                ...(payingStatusFilter && { payingStatus: payingStatusFilter }),
+                ...(refundStatusFilter !== "All" && { refundStatus: refundStatusFilter }), // Only include if not "All"
             }).toString();
 
-            const response = await AxiosInstance.authAxios.get(`/admin/allOrders?${queryParams}`);
+            const response = await AxiosInstance.authAxios.get(`/admin/refund-requests?${queryParams}`);
 
             if (response.data.success) {
-                setOrders(response.data.data || []);
-                setTotalItems(response.data.pagination?.totalItems || 0);
-                setTotalPages(response.data.pagination?.totalPages || 1);
+                setRequests(response.data.data || []);
+                setTotalItems(response.data.totalItems || response.data.data.length);
+                setTotalPages(response.data.totalPages || Math.ceil(response.data.data.length / itemsPerPage) || 1);
                 setPageInput(page.toString());
             } else {
                 throw new Error(`API returned success: false - ${response.data.message || "Unknown error"}`);
             }
         } catch (error) {
             if (error.response?.status === 404) {
-                setOrders([]);
+                setRequests([]);
                 setTotalItems(0);
                 setTotalPages(1);
                 return;
@@ -138,35 +131,49 @@ const AdminOrders = () => {
         setPageInput("1");
     };
 
+    const handleRefundStatusUpdate = async (orderId, newRefundStatus) => {
+        try {
+            const response = await AxiosInstance.authAxios.put(
+                `/admin/orders/updateRefundStatus/${orderId}`,
+                { refundStatus: newRefundStatus }
+            );
+
+            if (response.status === 200) {
+                setRequests((prevRequests) =>
+                    prevRequests.map((request) =>
+                        request.order_id === orderId
+                            ? { ...request, refundStatus: newRefundStatus }
+                            : request
+                    )
+                );
+                toast.success(`Refund status updated to ${newRefundStatus}`);
+            } else {
+                throw new Error("Failed to update refund status");
+            }
+        } catch (error) {
+            console.error("Error updating refund status:", error);
+            toast.error(error.response?.data?.message || "Failed to update refund status");
+        }
+    };
+
     const startIndex = (page - 1) * itemsPerPage + 1;
     const endIndex = Math.min(page * itemsPerPage, totalItems);
 
     const clearFilters = () => {
         setSearchQuery("");
-        setStatusFilter("");
-        setPaymentMethodFilter("");
-        setPayingStatusFilter("");
+        setRefundStatusFilter("All"); // Reset to "All"
         setPage(1);
         setPageInput("1");
-        fetchOrders();
+        fetchRefundRequests();
     };
 
-    const getPaymentStatusColor = (status) => {
-        switch (status.toLowerCase()) {
-            case "paid": return isDarkMode ? "bg-green-700 text-white" : "bg-green-500 text-white";
-            case "unpaid": return isDarkMode ? "bg-red-700 text-white" : "bg-red-500 text-white";
-            case "failed": return isDarkMode ? "bg-orange-700 text-white" : "bg-orange-500 text-white";
-            default: return isDarkMode ? "bg-gray-700 text-white" : "bg-gray-500 text-white";
-        }
-    };
-
-    const getStatusColor = (status) => {
-        switch (status.toLowerCase()) {
-            case "pending": return isDarkMode ? "bg-yellow-600 text-white" : "bg-yellow-400 text-black";
-            case "confirmed": return isDarkMode ? "bg-blue-700 text-white" : "bg-blue-500 text-white";
-            case "delivered": return isDarkMode ? "bg-green-700 text-white" : "bg-green-500 text-white";
-            case "cancelled":
-            case "cancelledbyadmin": return isDarkMode ? "bg-red-700 text-white" : "bg-red-500 text-white";
+    const getRefundStatusColor = (status) => {
+        switch (status?.toLowerCase()) {
+            case "Motinitiated": return isDarkMode ? "bg-gray-700 text-white" : "bg-gray-500 text-white";
+            case "Pending": return isDarkMode ? "bg-yellow-700 text-white" : "bg-yellow-500 text-white";
+            case "Processing": return isDarkMode ? "bg-blue-700 text-white" : "bg-blue-500 text-white";
+            case "Completed": return isDarkMode ? "bg-green-700 text-white" : "bg-green-500 text-white";
+            case "Failed": return isDarkMode ? "bg-red-700 text-white" : "bg-red-500 text-white";
             default: return isDarkMode ? "bg-gray-700 text-white" : "bg-gray-500 text-white";
         }
     };
@@ -185,23 +192,24 @@ const AdminOrders = () => {
         }
     };
 
-    // Handle export button click
     const handleExport = () => {
-        const csvContent = convertToCSV(orders);
+        const csvContent = convertToCSV(requests);
         const blob = new Blob([csvContent], { type: "text/csv" });
         const url = window.URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.href = url;
-        link.download = "orders_export.csv";
+        link.download = "refund_requests_export.csv";
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
         window.URL.revokeObjectURL(url);
     };
 
+    const refundStatusOptions = ["All", "NotInitiated", "Pending", "Processing", "Completed", "Failed"];
+
     const renderPageNumbers = () => {
         const pages = [];
-        const maxPagesToShow = window.innerWidth < 640 ? 3 : 5; // Show fewer pages on mobile
+        const maxPagesToShow = window.innerWidth < 640 ? 3 : 5;
         const siblingCount = 1;
         const boundaryCount = 1;
 
@@ -292,12 +300,12 @@ const AdminOrders = () => {
             className="min-h-screen flex flex-col p-4 sm:p-5 space-y-5 bg-gray-100 dark:bg-gray-900 text-black dark:text-white overflow-auto"
         >
             <div className="flex flex-row justify-between items-center mb-5 space-y-2 sm:space-y-0">
-                <h1 className="text-xl font-bold text-black dark:text-white">Orders</h1>
+                <h1 className="text-xl font-bold text-black dark:text-white">Refund Requests</h1>
                 <nav className="text-sm sm:text-base text-gray-600 dark:text-gray-300">
                     <Link to="/admin/dashboard" className="text-[#5671F0] hover:underline">
                         Dashboard
                     </Link>{" > "}
-                    <span className="text-black dark:text-white hover:underline">All Orders</span>
+                    <span className="text-black dark:text-white hover:underline">Refund Requests</span>
                 </nav>
             </div>
 
@@ -328,54 +336,23 @@ const AdminOrders = () => {
                         </svg>
                     </div>
 
-                    {/* Status Filter */}
+                    {/* Refund Status Filter */}
                     <select
-                        value={statusFilter}
+                        value={refundStatusFilter}
                         onChange={(e) => {
-                            setStatusFilter(e.target.value);
+                            setRefundStatusFilter(e.target.value);
                             setPage(1);
                         }}
                         className="w-full sm:w-32 md:w-36 lg:w-40 px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm transition-colors duration-200 hover:bg-gray-200 dark:hover:bg-gray-600"
                     >
-                        <option value="" className="dark:bg-gray-700 dark:text-gray-200">All statuses</option>
-                        <option value="Pending" className="dark:bg-gray-700 dark:text-gray-200">Pending</option>
-                        <option value="Confirmed" className="dark:bg-gray-700 dark:text-gray-200">Confirmed</option>
-                        <option value="Delivering" className="dark:bg-gray-700 dark:text-gray-200">Delivering</option>
-                        <option value="Delivered" className="dark:bg-gray-700 dark:text-gray-200">Delivered</option>
-                        <option value="Cancelled" className="dark:bg-gray-700 dark:text-gray-200">Cancelled</option>
-                        <option value="CancelledByAdmin" className="dark:bg-gray-700 dark:text-gray-200">Cancelled by admin</option>
+                        {refundStatusOptions.map((status) => (
+                            <option key={status} value={status} className="dark:bg-gray-700 dark:text-gray-200">
+                                {status}
+                            </option>
+                        ))}
                     </select>
 
-                    {/* Payment Method Filter */}
-                    <select
-                        value={paymentMethodFilter}
-                        onChange={(e) => {
-                            setPaymentMethodFilter(e.target.value);
-                            setPage(1);
-                        }}
-                        className="w-full sm:w-32 md:w-36 lg:w-40 px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm transition-colors duration-200 hover:bg-gray-200 dark:hover:bg-gray-600"
-                    >
-                        <option value="" className="dark:bg-gray-700 dark:text-gray-200">All payment methods</option>
-                        <option value="cod" className="dark:bg-gray-700 dark:text-gray-200">COD</option>
-                        <option value="momo" className="dark:bg-gray-700 dark:text-gray-200">MoMo</option>
-                        <option value="payos" className="dark:bg-gray-700 dark:text-gray-200">Bank</option>
-                    </select>
-
-                    {/* Paying Status Filter */}
-                    <select
-                        value={payingStatusFilter}
-                        onChange={(e) => {
-                            setPayingStatusFilter(e.target.value);
-                            setPage(1);
-                        }}
-                        className="w-full sm:w-32 md:w-36 lg:w-40 px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm transition-colors duration-200 hover:bg-gray-200 dark:hover:bg-gray-600"
-                    >
-                        <option value="" className="dark:bg-gray-700 dark:text-gray-200">All paying statuses</option>
-                        <option value="Paid" className="dark:bg-gray-700 dark:text-gray-200">Paid</option>
-                        <option value="Unpaid" className="dark:bg-gray-700 dark:text-gray-200">Unpaid</option>
-                    </select>
-
-                    {/* Export Button (Unchanged) */}
+                    {/* Export Button */}
                     <button
                         className="px-3 py-2 bg-[rgba(185,80,108,0.1)] rounded-lg flex items-center justify-center space-x-1 sm:space-x-2 text-sm font-medium text-[#b9506c] hover:bg-[rgba(185,80,108,0.2)] transition w-full sm:w-auto dark:bg-[rgba(185,80,108,0.2)] dark:text-[#b9506c] dark:hover:bg-[rgba(185,80,108,0.3)]"
                         onClick={handleExport}
@@ -395,13 +372,13 @@ const AdminOrders = () => {
                     <div className="flex flex-col items-center justify-center h-64 text-center">
                         <p className="text-lg text-red-600 dark:text-red-400 mb-4">{error}</p>
                         <button
-                            onClick={() => fetchOrders()}
+                            onClick={() => fetchRefundRequests()}
                             className="px-3 py-2 bg-purple-600 text-white dark:text-white rounded-lg hover:bg-purple-700 transition"
                         >
                             Retry
                         </button>
                     </div>
-                ) : orders.length > 0 ? (
+                ) : requests.length > 0 ? (
                     <>
                         {/* Scrollable Table Container */}
                         <div className="overflow-x-auto">
@@ -410,56 +387,54 @@ const AdminOrders = () => {
                                 <tr>
                                     <th className="p-2 sm:p-3 font-semibold">Order ID</th>
                                     <th className="p-2 sm:p-3 font-semibold">User</th>
-                                    <th className="p-2 sm:p-3 font-semibold">Total Price</th>
-                                    <th className="p-2 sm:p-3 font-semibold">Status</th>
-                                    <th className="p-2 sm:p-3 font-semibold">Payment</th>
-                                    <th className="p-2 sm:p-3 font-semibold">Payment Method</th>
+                                    <th className="p-2 sm:p-3 font-semibold">Cancellation Reason</th>
+                                    <th className="p-2 sm:p-3 font-semibold">Refund Status</th>
+                                    <th className="p-2 sm:p-3 font-semibold">Bank Info</th>
                                     <th className="p-2 sm:p-3 font-semibold">Created At</th>
-                                    <th className="p-2 sm:p-3 font-semibold">Actions</th>
                                 </tr>
                                 </thead>
                                 <tbody className="bg-white dark:bg-gray-800 text-black dark:text-white">
-                                {orders.map((order) => (
+                                {requests.map((request) => (
                                     <tr
-                                        key={order._id}
+                                        key={request.order_id}
                                         className="border-t border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700"
                                     >
-                                        <td className="p-2 sm:p-3 truncate">{order.order_id}</td>
-                                        <td className="p-2 sm:p-3 truncate">{order.user?.name || "N/A"}</td>
+                                        <td className="p-2 sm:p-3 truncate">{request.order_id}</td>
+                                        <td className="p-2 sm:p-3 truncate">{request.user?.name || "N/A"}</td>
+                                        <td className="p-2 sm:p-3 truncate">{request.cancellationReason || "N/A"}</td>
                                         <td className="p-2 sm:p-3 truncate">
-                                            ${order.totalPrice?.toFixed(2) || "0.00"}
-                                        </td>
-                                        <td className="p-2 sm:p-3 truncate">
-                                                <span
-                                                    className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusColor(
-                                                        order.status || "N/A"
-                                                    )}`}
-                                                >
-                                                    {order.status ? formatStatusText(order.status) : "N/A"}
-                                                </span>
-                                        </td>
-                                        <td className="p-2 sm:p-3 truncate">
-                                                <span
-                                                    className={`px-2 py-1 rounded-full text-xs font-semibold ${getPaymentStatusColor(
-                                                        order.payingStatus || "N/A"
-                                                    )}`}
-                                                >
-                                                    {order.payingStatus || "N/A"}
-                                                </span>
-                                        </td>
-                                        <td className="p-2 sm:p-3 truncate">
-                                            {order.PaymentMethod || "N/A"}
-                                        </td>
-                                        <td className="p-2 sm:p-3 truncate">
-                                            {order.createdAt ? formatDateTime(order.createdAt) : "N/A"}
-                                        </td>
-                                        <td className="p-2 sm:p-3 flex flex-row space-x-2">
-                                            <button
-                                                className="text-green-500 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 p-2 rounded-lg bg-green-100 dark:bg-green-900/20 flex items-center justify-center w-10 h-10"
-                                                onClick={() => navigate(`/admin/orders/edit/${order.order_id}`)}
+                                            <select
+                                                value={request.refundStatus || "NotInitiated"}
+                                                onChange={(e) => handleRefundStatusUpdate(request.order_id, e.target.value)}
+                                                className="px-2 py-1 rounded-full text-xs font-semibold border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200"
+                                                disabled={request.refundStatus === "Completed"}
                                             >
-                                                <Pencil size={20} />
-                                            </button>
+                                                {refundStatusOptions.filter(status => status !== "All").map((status) => (
+                                                    <option key={status} value={status} className="dark:bg-gray-700 dark:text-gray-200">
+                                                        {status}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </td>
+                                        <td className="p-2 sm:p-3">
+                                            {request.refundInfo ? (
+                                                <ul className="text-sm text-gray-700 space-y-1">
+                                                    <li className="truncate">
+                                                        <span className="font-medium">Account Name:</span> {request.refundInfo.accountName || "N/A"}
+                                                    </li>
+                                                    <li className="truncate">
+                                                        <span className="font-medium">Account Number:</span> {request.refundInfo.accountNumber || "N/A"}
+                                                    </li>
+                                                    <li className="truncate">
+                                                        <span className="font-medium">Bank:</span> {request.refundInfo.bankName || "N/A"}
+                                                    </li>
+                                                </ul>
+                                            ) : (
+                                                <span className="text-sm text-gray-700">N/A</span>
+                                            )}
+                                        </td>
+                                        <td className="p-2 sm:p-3 truncate">
+                                            {request.createdAt ? formatDateTime(request.createdAt) : "N/A"}
                                         </td>
                                     </tr>
                                 ))}
@@ -572,7 +547,7 @@ const AdminOrders = () => {
                     </>
                 ) : (
                     <div className="flex flex-col items-center justify-center h-64 text-center">
-                        <p className="text-lg text-gray-600 dark:text-gray-300 mb-4">No orders found</p>
+                        <p className="text-lg text-gray-600 dark:text-gray-300 mb-4">No refund requests found</p>
                         <button
                             onClick={clearFilters}
                             className="px-3 py-2 bg-purple-600 text-white dark:text-white rounded-lg hover:bg-purple-700 transition"
@@ -586,4 +561,4 @@ const AdminOrders = () => {
     );
 };
 
-export default AdminOrders;
+export default AdminRefundRequests;

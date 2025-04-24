@@ -22,6 +22,12 @@ const convertToCSV = (data) => {
     return [headers, ...rows].join("\n");
 };
 
+// Utility function to capitalize the first letter of a string
+const capitalizeFirstLetter = (str) => {
+    if (!str || typeof str !== 'string') return str;
+    return str.charAt(0).toUpperCase() + str.slice(1);
+};
+
 const AdminProducts = () => {
     const [allProducts, setAllProducts] = useState([]);
     const [filteredProducts, setFilteredProducts] = useState([]);
@@ -537,7 +543,7 @@ const AdminProducts = () => {
                         </option>
                         {categories.map((category) => (
                             <option key={category} value={category} className="dark:bg-gray-700 dark:text-gray-200">
-                                {truncateText(category, 15)}
+                                {truncateText(capitalizeFirstLetter(category), 15)}
                             </option>
                         ))}
                     </select>
@@ -557,7 +563,7 @@ const AdminProducts = () => {
                         </option>
                         {types.map((type) => (
                             <option key={type} value={type} className="dark:bg-gray-700 dark:text-gray-200">
-                                {truncateText(type, 15)}
+                                {truncateText(capitalizeFirstLetter(type), 15)}
                             </option>
                         ))}
                     </select>
@@ -630,9 +636,9 @@ const AdminProducts = () => {
                                     >
                                         <td className="p-1 sm:p-2 md:p-3 text-sm">{product.product_id}</td>
                                         <td className="p-1 sm:p-2 md:p-3 text-sm">{truncateText(product.name, 20)}</td>
-                                        <td className="p-1 sm:p-2 md:p-3 text-sm">{product.price}$</td>
-                                        <td className="p-1 sm:p-2 text-[#5671F0] md:p-3 text-sm">{truncateText(product.category, 15)}</td>
-                                        <td className="p-1 sm:p-2 md:p-3 text-sm">{truncateText(product.type, 15)}</td>
+                                        <td className="p-1 sm:p-2 md:p-3 text-sm">${product.price}</td>
+                                        <td className="p-1 sm:p-2 text-[#5671F0] md:p-3 text-sm">{truncateText(capitalizeFirstLetter(product.category), 15)}</td>
+                                        <td className="p-1 sm:p-2 md:p-3 text-sm">{truncateText(capitalizeFirstLetter(product.type), 15)}</td>
                                         <td className="p-1 sm:p-2 md:p-3 text-sm">
                                                 <span
                                                     className={`inline-flex items-center ${
