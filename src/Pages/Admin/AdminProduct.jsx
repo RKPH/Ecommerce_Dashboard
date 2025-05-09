@@ -656,7 +656,7 @@ const AdminProducts = () => {
                                         </td>
                                         <td className="p-2 sm:p-3 flex flex-row space-x-2">
                                             <button
-                                                className="text-green-500 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 p-1 sm:p-2 rounded-lg bg-green-100 dark:bg-green-900 flex items-center justify-center w-10 h-10 text-sm"
+                                                className="text-blue-500 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 p-2 rounded-lg bg-blue-100 dark:bg-blue-900/20 flex items-center justify-center w-10 h-10 hover:bg-blue-200 dark:hover:bg-blue-800 transition-all shadow-sm"
                                                 onClick={() =>
                                                     navigate(`/admin/products/edit/${product.product_id}`)
                                                 }

@@ -29,22 +29,16 @@ const Header = ({ handleDrawerToggle }) => {
     // Update isTabletOrMobile on window resize
     useEffect(() => {
         const handleResize = () => {
-            const newIsTabletOrMobile = window.innerWidth <= 1024; // Include 1024px
+            const newIsTabletOrMobile = window.innerWidth <= 1024;
             setIsTabletOrMobile(newIsTabletOrMobile);
             console.log("Window resized, isTabletOrMobile:", newIsTabletOrMobile);
         };
 
-        // Set initial value
         handleResize();
-
-        // Add event listener for resize
         window.addEventListener("resize", handleResize);
-
-        // Cleanup event listener on unmount
         return () => window.removeEventListener("resize", handleResize);
     }, []);
 
-    // Log when isTabletOrMobile changes
     useEffect(() => {
         console.log("isTabletOrMobile updated:", isTabletOrMobile);
     }, [isTabletOrMobile]);
@@ -68,7 +62,6 @@ const Header = ({ handleDrawerToggle }) => {
         }
     }, [isAuthenticated, user, dispatch]);
 
-    // Function to calculate "X Days ago" or other time difference
     const getTimeAgo = (date) => {
         const now = new Date();
         const diffInMs = now - new Date(date);
@@ -79,7 +72,6 @@ const Header = ({ handleDrawerToggle }) => {
         return `${diffInDays} Days ago`;
     };
 
-    // Function to truncate orderId to the first 6 characters with ellipsis
     const truncateOrderId = (orderId) => {
         const orderIdStr = String(orderId);
         if (orderIdStr.length > 6) {
@@ -88,18 +80,16 @@ const Header = ({ handleDrawerToggle }) => {
         return orderIdStr;
     };
 
-    // Connect to Socket.IO and listen for notifications
     useEffect(() => {
         if (isAuthenticated && user?.id) {
             socket.connect();
 
             socket.emit("join", user.id);
 
-
-            // Listen for new order placed (for admins)
+            // Listen for notifications (admin and user)
             if (user?.role === "admin") {
                 socket.on("newOrderPlaced", (data) => {
-                    const {id, orderId, userId, totalPrice, paymentMethod, createdAt } = data;
+                    const { id, orderId, userId, totalPrice, paymentMethod, createdAt } = data;
                     setNotifications((prevNotifications) => [
                         ...prevNotifications,
                         {
@@ -117,6 +107,27 @@ const Header = ({ handleDrawerToggle }) => {
                     ]);
                     setUnreadCount((prev) => prev + 1);
                 });
+
+                socket.on("refundBankDetailsSubmitted", (data) => {
+                    const { orderId, userId, bankName, accountNumber, accountHolderName, submittedAt } = data;
+                    setNotifications((prevNotifications) => [
+                        ...prevNotifications,
+                        {
+                            id: orderId,
+                            orderId,
+                            userId,
+                            bankName,
+                            accountNumber,
+                            accountHolderName,
+                            createdAt: submittedAt || new Date(),
+                            isRead: false,
+                            title: `Refund Request #${truncateOrderId(orderId)}`,
+                            message: "Refund bank details submitted",
+                            timeAgo: getTimeAgo(submittedAt || new Date()),
+                        },
+                    ]);
+                    setUnreadCount((prev) => prev + 1);
+                });
             }
 
             socket.on("connect", () => {
@@ -130,6 +141,7 @@ const Header = ({ handleDrawerToggle }) => {
             return () => {
                 socket.off("orderStatusUpdated");
                 socket.off("newOrderPlaced");
+                socket.off("refundBankDetailsSubmitted");
                 socket.off("connect");
                 socket.off("disconnect");
                 socket.disconnect();
@@ -169,14 +181,12 @@ const Header = ({ handleDrawerToggle }) => {
                 theme === "dark" ? "bg-gray-900 text-white" : "bg-white text-gray-800"
             }`}
         >
-            {/* Left Side: Burger Menu (Mobile and iPad) */}
             <div className="flex items-center">
-                {/* Burger Menu for Mobile and iPad */}
                 <button
                     onClick={handleDrawerToggle}
                     className={`p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full ${
                         isTabletOrMobile ? "block" : "hidden"
-                    } custom-lg:hidden`} // Use custom-lg:hidden to show on screens <= 1024px
+                    } custom-lg:hidden`}
                 >
                     <svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -195,9 +205,7 @@ const Header = ({ handleDrawerToggle }) => {
                 </button>
             </div>
 
-            {/* Right Side: Notification, Theme Toggle, User Avatar, and User Role */}
             <div className="flex items-center gap-3">
-                {/* Notification Icon with Dropdown */}
                 <Tippy
                     visible={isOpen}
                     onClickOutside={() => setIsOpen(false)}
@@ -213,7 +221,6 @@ const Header = ({ handleDrawerToggle }) => {
                             tabIndex="-1"
                             {...attrs}
                         >
-                            {/* Header Section */}
                             <div className="flex justify-between items-center mb-4">
                                 <h3 className="text-lg font-semibold">Notifications</h3>
                                 {notifications.length > 0 && (
@@ -242,7 +249,6 @@ const Header = ({ handleDrawerToggle }) => {
                                 )}
                             </div>
 
-                            {/* Notification Items */}
                             {notifications.length > 0 ? (
                                 notifications.map((notification, index) => (
                                     <div
@@ -268,7 +274,6 @@ const Header = ({ handleDrawerToggle }) => {
                                         ></span>
                                         <div className="flex-1">
                                             {notification.title ? (
-                                                // Admin notification (new order placed)
                                                 <Link
                                                     to={`/admin/orders/edit/${notification.orderId}`}
                                                     className="block"
@@ -290,7 +295,7 @@ const Header = ({ handleDrawerToggle }) => {
                                                                     : "text-gray-500"
                                                             }`}
                                                         >
-                                                           {getTimeAgo(notification.createdAt)}
+                                                            {getTimeAgo(notification.createdAt)}
                                                         </p>
                                                     </div>
                                                     <p className="text-sm leading-tight">
@@ -298,7 +303,6 @@ const Header = ({ handleDrawerToggle }) => {
                                                     </p>
                                                 </Link>
                                             ) : (
-                                                // User notification (order status updated)
                                                 <Link
                                                     to={`/order/${notification.orderId}`}
                                                     className="block"
@@ -386,7 +390,6 @@ const Header = ({ handleDrawerToggle }) => {
                     </div>
                 </Tippy>
 
-                {/* Theme Toggle (Sun/Moon Icon) */}
                 <button
                     onClick={handleThemeToggle}
                     className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full"
@@ -424,7 +427,6 @@ const Header = ({ handleDrawerToggle }) => {
                     )}
                 </button>
 
-                {/* User Avatar */}
                 {user?.avatar && (
                     <img
                         src={user.avatar}
@@ -433,7 +435,6 @@ const Header = ({ handleDrawerToggle }) => {
                     />
                 )}
 
-                {/* User Role */}
                 {user?.role && (
                     <span className="text-base font-medium">
                         {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
