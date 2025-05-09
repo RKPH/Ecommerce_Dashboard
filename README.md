@@ -31,8 +31,8 @@ Ensure you have the following installed:
 Clone the repository to your local machine:
 
 ```bash
-git clone https://github.com/RKPH/EcommerceFrontend.git
-cd EcommerceFrontend
+git clone https://github.com/RKPH/Ecommerce_Dashboard.git
+cd Ecommerce_Dashboard
 ```
 
 ### Configure the API URL
