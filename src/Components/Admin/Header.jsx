@@ -290,7 +290,7 @@ const Header = ({ handleDrawerToggle }) => {
                                                                     : "text-gray-500"
                                                             }`}
                                                         >
-                                                            {notification.timeAgo}
+                                                           {getTimeAgo(notification.createdAt)}
                                                         </p>
                                                     </div>
                                                     <p className="text-sm leading-tight">

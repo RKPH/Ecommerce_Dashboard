@@ -14,29 +14,27 @@ import {
     ResponsiveContainer,
 } from "recharts";
 import { useLocation } from "react-router-dom";
-import { Select } from "@mui/material";
 
 // Custom Tooltip Component
 const CustomTooltip = ({ active, payload, label, coordinate, barWidth = 90 }) => {
     if (active && payload && payload.length) {
-        // Calculate the x position to center the tooltip over the bar
-        const tooltipWidth = barWidth; // Match the bar width
-        const xPosition = coordinate.x - tooltipWidth / 2; // Center the tooltip over the bar
+        const tooltipWidth = barWidth;
+        const xPosition = coordinate.x - tooltipWidth / 2;
 
         return (
             <div
-                className="bg-gray-800 text-white p-2 rounded shadow-lg dark:bg-gray-900"
+                className="bg-blue-900 text-white p-3 rounded-md shadow-lg dark:bg-blue-950"
                 style={{
-                    width: `${tooltipWidth}px`, // Strictly enforce the bar width
+                    width: `${tooltipWidth}px`,
                     textAlign: "center",
                     position: "absolute",
-                    left: `${xPosition}px`, // Position the tooltip to align with the bar
-                    top: `${coordinate.y - 50}px`, // Adjust vertical position above the bar
+                    left: `${xPosition}px`,
+                    top: `${coordinate.y - 60}px`,
                     border: "none",
-                    boxShadow: "0 2px 4px rgba(0, 0, 0, 0.2)",
+                    boxShadow: "0 4px 8px rgba(0, 0, 0, 0.3)",
                 }}
             >
-                <p className="text-sm m-0">{`${label}: $${payload[0].value.toFixed(2)}`}</p>
+                <p className="text-sm font-medium m-0">{`${label}: $${payload[0].value.toFixed(2)}`}</p>
             </div>
         );
     }
@@ -87,58 +85,60 @@ const MostOrderedProducts = () => {
     }, [category]);
 
     return (
-        <div className="bg-white h-[700px] overflow-y-auto dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-md">
-            {/* Header Section with Category Filter */}
-            <div className="flex justify-between items-center mb-6 border-b p-4 dark:border-gray-700">
-                <div className="flex items-center gap-x-2">
-                    <TrendingUpTwoToneIcon />
-                    <h3 className="text-base font-semibold dark:text-white">
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+            <div className="flex justify-between items-center p-6 border-b dark:border-gray-700">
+                <div className="flex items-center gap-x-3">
+                    <TrendingUpTwoToneIcon className="text-blue-500" />
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                         Most Ordered Products
                     </h3>
                 </div>
-                <select
-                    value={category}
-                    onChange={(e) => setCategory(e.target.value)}
-                    disabled={categoriesLoading}
-                    className="w-full sm:w-32 md:w-36 lg:w-40 px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm transition-colors duration-200 hover:bg-gray-200 dark:hover:bg-gray-600"
-                >
-                    <option value="" disabled className="dark:bg-gray-700 dark:text-gray-200">
-                        {categoriesLoading ? "Loading..." : "Select Category"}
-                    </option>
-                    {categories.map((cat) => (
-                        <option key={cat} value={cat} className="dark:bg-gray-700 dark:text-gray-200">
-                            {cat}
+                <div className="relative">
+                    <select
+                        value={category}
+                        onChange={(e) => setCategory(e.target.value)}
+                        disabled={categoriesLoading}
+                        className="appearance-none w-40 pl-4 pr-8 py-2 rounded-md bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm shadow-sm hover:bg-gray-50 dark:hover:bg-gray-600 transition"
+                    >
+                        <option value="" disabled className="dark:bg-gray-700 dark:text-gray-200">
+                            {categoriesLoading ? "Loading..." : "Select Category"}
                         </option>
-                    ))}
-                </select>
+                        {categories.map((cat) => (
+                            <option key={cat} value={cat} className="dark:bg-gray-700 dark:text-gray-200">
+                                {cat}
+                            </option>
+                        ))}
+                    </select>
+                    <div className="absolute inset-y-0 right-2 flex items-center pointer-events-none">
+                        <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </div>
+                </div>
             </div>
-
-            {/* Products List or Loading State */}
-            <div className="space-y-4">
+            <div className="p-6 space-y-4">
                 {loading ? (
-                    // Skeleton or loading effect within the product list area
                     [...Array(5)].map((_, index) => (
                         <div
                             key={index}
                             className="flex flex-col sm:flex-row sm:justify-between items-start sm:items-center p-4 bg-gray-50 dark:bg-gray-900 rounded-lg animate-pulse space-y-4 sm:space-y-0"
                         >
                             <div className="flex items-center space-x-4 w-full sm:w-auto">
-                                <div className="w-16 h-16 bg-gray-300 dark:bg-gray-700 rounded-lg" />
+                                <div className="w-16 h-16 bg-gray-200 dark:bg-gray-700 rounded-lg shimmer" />
                                 <div className="flex-1 min-w-0 space-y-2">
-                                    <div className="h-4 bg-gray-300 dark:bg-gray-700 rounded w-3/4" />
-                                    <div className="h-3 bg-gray-300 dark:bg-gray-700 rounded w-1/2" />
+                                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 shimmer" />
+                                    <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-1/2 shimmer" />
                                 </div>
                             </div>
-                            <div className="w-16 h-4 bg-gray-300 dark:bg-gray-700 rounded" />
+                            <div className="w-16 h-4 bg-gray-200 dark:bg-gray-700 rounded shimmer" />
                         </div>
                     ))
                 ) : products.length > 0 ? (
-                    products.map((product,Index) => (
+                    products.map((product) => (
                         <div
-                            key={Index}
-                            className="flex flex-col sm:flex-row sm:justify-between items-start sm:items-center p-4 bg-gray-50 dark:bg-gray-900 rounded-lg hover:shadow-lg transition duration-300 space-y-4 sm:space-y-0"
+                            key={product._id}
+                            className="flex flex-col sm:flex-row sm:justify-between items-start sm:items-center p-4 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition shadow-sm"
                         >
-                            {/* Product Image & Info */}
                             <div className="flex items-center space-x-4 w-full sm:w-auto">
                                 <img
                                     src={product.MainImage}
@@ -146,7 +146,7 @@ const MostOrderedProducts = () => {
                                     className="w-16 h-16 object-cover rounded-lg border border-gray-200 dark:border-gray-700 flex-shrink-0"
                                 />
                                 <div className="flex-1 min-w-0">
-                                    <h4 className="font-medium text-gray-800 dark:text-white truncate">
+                                    <h4 className="text-base font-medium text-gray-800 dark:text-white truncate">
                                         {product.productName}
                                     </h4>
                                     <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -154,15 +154,13 @@ const MostOrderedProducts = () => {
                                     </p>
                                 </div>
                             </div>
-
-                            {/* Order Count */}
                             <p className="text-sm font-medium text-gray-700 dark:text-white whitespace-nowrap">
                                 {product.totalOrdered} orders
                             </p>
                         </div>
                     ))
                 ) : (
-                    <p className="text-gray-500 dark:text-gray-400">No products found</p>
+                    <p className="text-gray-500 dark:text-gray-400 text-center">No products found</p>
                 )}
             </div>
         </div>
@@ -181,13 +179,11 @@ const RevenueStatsChart = () => {
 
     const fetchRevenueData = async (type) => {
         setLoading(true);
-        setChartData([]); // Clear old data immediately for smoother transition
-
+        setChartData([]);
         try {
             const url = type === "monthly" ? "admin/revenue" : "admin/WeeklyRevenue";
             const response = await axiosInstance.authAxios.get(url);
             const data = response.data;
-
             if (type === "monthly") {
                 const formattedData = data.monthlyRevenue.map((item) => ({
                     name: item.month,
@@ -197,7 +193,7 @@ const RevenueStatsChart = () => {
                 setRange(data.range);
             } else {
                 const formattedData = data.weeklyRevenue.map((item) => ({
-                    name: item.day, // e.g., Sun, Mon, etc.
+                    name: item.day,
                     revenue: item.revenue,
                 }));
                 setChartData(formattedData);
@@ -207,7 +203,7 @@ const RevenueStatsChart = () => {
             console.error(`Failed to fetch ${type} revenue data`, error);
             setChartData([]);
         } finally {
-            setTimeout(() => setLoading(false), 300); // Optional slight delay to smooth appearance
+            setLoading(false);
         }
     };
 
@@ -219,48 +215,45 @@ const RevenueStatsChart = () => {
     };
 
     return (
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
-            {/* Header */}
-            <div className="flex justify-between items-center p-4 border-b mb-6 dark:border-gray-700">
-                <div className="flex gap-x-2">
-                    <ShowChartTwoToneIcon />
-                    <h3 className="text-base font-semibold dark:text-white">Revenue Overview</h3>
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+            <div className="flex justify-between items-center p-6 border-b dark:border-gray-700">
+                <div className="flex items-center gap-x-3">
+                    <ShowChartTwoToneIcon className="text-blue-500" />
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                        Revenue Overview
+                    </h3>
                 </div>
-
                 <div className="flex space-x-2">
                     <button
                         onClick={() => handleTimeframeChange("monthly")}
-                        className={`px-3 py-1 rounded transition ${
+                        className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
                             timeframe === "monthly"
-                                ? "bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-300"
-                                : "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300"
+                                ? "bg-blue-500 text-white dark:bg-blue-600"
+                                : "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
                         }`}
                     >
                         Monthly
                     </button>
                     <button
                         onClick={() => handleTimeframeChange("weekly")}
-                        className={`px-3 py-1 rounded transition ${
+                        className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
                             timeframe === "weekly"
-                                ? "bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-300"
-                                : "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300"
+                                ? "bg-blue-500 text-white dark:bg-blue-600"
+                                : "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
                         }`}
                     >
                         Weekly
                     </button>
                 </div>
             </div>
-
-            {/* Chart Container */}
-            <div className="h-80 relative p-2">
+            <div className="relative p-6">
                 {loading && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-white dark:bg-gray-800 bg-opacity-90 z-10 transition-opacity animate-fade-in">
-                        <p className="text-gray-500 dark:text-gray-400">Loading revenue data...</p>
+                    <div className="absolute inset-0 flex items-center justify-center bg-white dark:bg-gray-800 bg-opacity-75 z-10 transition-opacity">
+                        <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
                     </div>
                 )}
-
                 <div
-                    className={`h-full transition-opacity duration-500 ${
+                    className={`h-80 transition-opacity duration-500 ${
                         loading ? "opacity-0" : "opacity-100"
                     }`}
                 >
@@ -272,18 +265,26 @@ const RevenueStatsChart = () => {
                             <CartesianGrid
                                 strokeDasharray="3 3"
                                 vertical={false}
-                                className="text-gray-300 dark:text-gray-600"
+                                stroke="#E5E7EB"
+                                className="dark:stroke-gray-600"
                             />
-                            <XAxis dataKey="name" className="text-gray-700 text-base dark:text-gray-300" />
-                            <YAxis className="text-gray-700 text-base dark:text-gray-300" />
+                            <XAxis
+                                dataKey="name"
+                                className="text-gray-700 text-sm dark:text-gray-300"
+                                fontSize={14}
+                            />
+                            <YAxis
+                                className="text-gray-700 text-sm dark:text-gray-300"
+                                fontSize={14}
+                            />
                             <Tooltip
                                 content={<CustomTooltip barWidth={90} />}
                                 wrapperStyle={{ outline: "none", border: "none", padding: 0 }}
-                                cursor={false} // Disable the default cursor rectangle
+                                cursor={false}
                             />
                             <Bar
                                 dataKey="revenue"
-                                fill="#5671F0"
+                                fill="#3B82F6"
                                 barSize={50}
                                 radius={[4, 4, 0, 0]}
                             />
@@ -291,10 +292,8 @@ const RevenueStatsChart = () => {
                     </ResponsiveContainer>
                 </div>
             </div>
-
-            {/* Date Range */}
             {!loading && chartData.length > 0 && (
-                <div className="my-4 text-center text-base text-gray-400 dark:text-gray-300">
+                <div className="pb-6 text-center text-sm text-gray-500 dark:text-gray-400">
                     <span className="font-medium">{range}</span>
                 </div>
             )}
@@ -308,145 +307,169 @@ const AdminDashboard = () => {
         previousMonthRevenue: 0,
         percentageChange: "0.00%",
     });
-    const location = useLocation();
     const [ordersData, setOrdersData] = useState({
         currentMonthOrders: 0,
         previousMonthOrders: 0,
         percentageChange: "0.00%",
     });
     const [usersData, setUsersData] = useState({
-        currentMonthUsers: 0,
-        previousMonthUsers: 0,
-        percentageChange: "0.00%",
+        totalUsers: { currentMonth: 0, previousMonth: 0, percentageChange: "0.00%" },
+        customers: { currentMonth: 0, previousMonth: 0, percentageChange: "0.00%" },
+        admins: { currentMonth: 0, previousMonth: 0, percentageChange: "0.00%" },
     });
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const location = useLocation();
 
     useEffect(() => {
         window.scrollTo(0, 0);
     }, [location.pathname]);
 
     useEffect(() => {
-        const fetchRevenueData = async () => {
+        const fetchData = async () => {
+            setLoading(true);
+            setError(null);
             try {
-                const response = await axiosInstance.authAxios.get("/admin/total");
-                setRevenueData(response.data);
+                const [revenueResponse, ordersResponse, usersResponse] = await Promise.all([
+                    axiosInstance.authAxios.get("/admin/total"),
+                    axiosInstance.authAxios.get("/admin/totalOrders"),
+                    axiosInstance.authAxios.get("/admin/totalUsers"),
+                ]);
+                setRevenueData(revenueResponse.data);
+                setOrdersData(ordersResponse.data);
+                setUsersData(usersResponse.data);
             } catch (error) {
-                console.error("Failed to fetch revenue data", error);
+                console.error("Failed to fetch dashboard data", error);
+                setError("Failed to load dashboard data. Please try again.");
             } finally {
                 setLoading(false);
             }
         };
-
-        fetchRevenueData();
-    }, []);
-
-    useEffect(() => {
-        const fetchOrderData = async () => {
-            try {
-                const response = await axiosInstance.authAxios.get("/admin/totalOrders");
-                setOrdersData(response.data);
-            } catch (error) {
-                console.error("Failed to fetch order data", error);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchOrderData();
-    }, []);
-    useEffect(() => {
-        const fetchUserData = async () => {
-            try {
-                const response = await axiosInstance.authAxios.get("/admin/totalUsers");
-                setUsersData(response.data);
-            } catch (error) {
-                console.error("Failed to fetch order data", error);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchUserData();
+        fetchData();
     }, []);
 
     const cards = [
         {
             title: "REVENUES THIS MONTH",
             value: `$${revenueData.currentMonthRevenue.toLocaleString()}`,
+            previousValue: `$${revenueData.previousMonthRevenue.toLocaleString()}`,
             icon: <Wallet className="w-8 h-8 text-red-500" />,
-            bgColor: "bg-red-100 dark:bg-red-900",
-            textColor: "text-red-500",
+            bgColor: "bg-gradient-to-br from-red-100 to-red-200 dark:from-red-900 dark:to-red-800",
+            textColor: "text-red-600 dark:text-red-400",
             change: parseFloat(revenueData.percentageChange),
         },
         {
             title: "ORDERS THIS MONTH",
             value: `${ordersData.currentMonthOrders.toLocaleString()}`,
+            previousValue: `${ordersData.previousMonthOrders.toLocaleString()}`,
             icon: <ShoppingBag className="w-8 h-8 text-blue-500" />,
-            bgColor: "bg-blue-100 dark:bg-blue-900",
-            textColor: "text-blue-500",
+            bgColor: "bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900 dark:to-blue-800",
+            textColor: "text-blue-600 dark:text-blue-400",
             change: parseFloat(ordersData.percentageChange),
         },
         {
-            title: "USERS JOINED THIS MONTH",
-            value: `${usersData.totalUsers?.currentMonth.toLocaleString() || 0}`,
+            title: "CUSTOMERS JOINED THIS MONTH",
+            value: `${usersData.customers.currentMonth.toLocaleString()}`,
+            previousValue: `${usersData.customers.previousMonth.toLocaleString()}`,
             icon: <Users className="w-8 h-8 text-green-500" />,
-            bgColor: "bg-green-100 dark:bg-green-900",
-            textColor: "text-green-500",
-            change: parseFloat(usersData.totalUsers?.percentageChange || "0"),
+            bgColor: "bg-gradient-to-br from-green-100 to-green-200 dark:from-green-900 dark:to-green-800",
+            textColor: "text-green-600 dark:text-green-400",
+            change: parseFloat(usersData.customers.percentageChange),
         },
     ];
 
     return (
-        <div
-            className="min-w-fit min-h-screen flex flex-col p-4 sm:p-5 space-y-5 bg-gray-100 dark:bg-gray-900 text-black dark:text-white overflow-auto"
-        >
-            <div className="flex justify-between items-center mb-5">
-                <h1 className="text-xl font-bold text-black dark:text-white">Dashboard</h1>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {cards.map((card, index) => (
-                    <div
-                        key={index}
-                        className="p-4 border rounded-lg shadow bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 flex justify-between items-center transition-transform transform hover:scale-105"
-                    >
-                        <div>
-                            <h2 className={`text-sm font-bold ${card.textColor}`}>
-                                {card.title}
-                            </h2>
-                            <p className="text-xl font-bold text-black dark:text-white">
-                                {card.value}
-                            </p>
-
-                            {/* Percentage Change Indicator */}
-                            <div className="flex items-center space-x-1 mt-1">
-                                {card.change !== undefined && (
-                                    <span
-                                        className={`text-sm font-medium ${
-                                            card.change >= 0 ? "text-green-500 dark:text-green-400" : "text-red-500 dark:text-red-400"
-                                        }`}
-                                    >
-                                        {card.change >= 0 ? "▲" : "▼"} {Math.abs(card.change)}%
-                                    </span>
-                                )}
-                                <p className="text-xs text-gray-500 dark:text-gray-400">
-                                    compared to last month
-                                </p>
+        <div className="min-h-screen flex flex-col p-6 sm:p-8 bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white font-sans">
+            <h1 className="text-2xl font-bold mb-6 text-gray-900 dark:text-white">Dashboard</h1>
+            {error && (
+                <div className="mb-6 p-4 bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-300 rounded-md">
+                    {error}
+                </div>
+            )}
+            {loading ? (
+                <div className="flex items-center justify-center h-64">
+                    <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                </div>
+            ) : (
+                <>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {cards.map((card, index) => (
+                            <div
+                                key={index}
+                                className="p-6 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all duration-300"
+                            >
+                                <div className="flex justify-between items-start">
+                                    <div>
+                                        <h2 className={`text-sm font-semibold ${card.textColor} uppercase tracking-wide`}>
+                                            {card.title}
+                                        </h2>
+                                        <p className="text-2xl font-bold text-gray-900 dark:text-white mt-2">
+                                            {card.value}
+                                        </p>
+                                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                                            Last Month: {card.previousValue}
+                                        </p>
+                                        <div className="flex items-center space-x-2 mt-2">
+                                            {card.change !== undefined && (
+                                                <span
+                                                    className={`text-sm font-medium ${
+                                                        card.change >= 0
+                                                            ? "text-green-500 dark:text-green-400"
+                                                            : "text-red-500 dark:text-red-400"
+                                                    }`}
+                                                >
+                                                    {card.change >= 0 ? "▲" : "▼"} {Math.abs(card.change)}%
+                                                </span>
+                                            )}
+                                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                                                vs. last month
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className={`p-3 rounded-lg ${card.bgColor}`}>
+                                        {card.icon}
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                        <div className={`p-2 rounded ${card.bgColor}`}>
-                            {card.icon}
-                        </div>
+                        ))}
                     </div>
-                ))}
-            </div>
-
-            <RevenueStatsChart />
-
-            <div className="grid grid-cols-1 md:grid-cols-1 xl:grid-cols-2 gap-4">
-                <MostOrderedProducts />
-                <MostRatedProducts />
-            </div>
+                    <div className="mt-8">
+                        <RevenueStatsChart />
+                    </div>
+                    <div className="mt-8 grid grid-cols-1 xl:grid-cols-2 gap-6">
+                        <MostOrderedProducts />
+                        <MostRatedProducts />
+                    </div>
+                </>
+            )}
+            <style jsx>{`
+                .shimmer {
+                    background: linear-gradient(
+                        90deg,
+                        rgba(229, 231, 235, 0.2) 25%,
+                        rgba(229, 231, 235, 0.4) 50%,
+                        rgba(229, 231, 235, 0.2) 75%
+                    );
+                    background-size: 200% 100%;
+                    animation: shimmer 1.5s infinite;
+                }
+                .dark .shimmer {
+                    background: linear-gradient(
+                        90deg,
+                        rgba(55, 65, 81, 0.2) 25%,
+                        rgba(55, 65, 81, 0.4) 50%,
+                        rgba(55, 65, 81, 0.2) 75%
+                    );
+                }
+                @keyframes shimmer {
+                    0% {
+                        background-position: 200% 0;
+                    }
+                    100% {
+                        background-position: -200% 0;
+                    }
+                }
+            `}</style>
         </div>
     );
 };

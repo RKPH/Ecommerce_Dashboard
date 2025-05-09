@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Pencil, File } from "lucide-react";
+import { Pencil } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import {
     FormControl,
@@ -8,19 +8,10 @@ import {
     TextField,
     CircularProgress,
 } from "@mui/material";
+import DownloadForOfflineIcon from "@mui/icons-material/DownloadForOffline";
 import { toast } from "react-toastify";
 import axiosInstance from "../../api/axiosInstance.js";
-import DownloadForOfflineIcon from "@mui/icons-material/DownloadForOffline";
-
-// Function to convert data to CSV format
-const convertToCSV = (data) => {
-    const headers = ["User ID,Name,Role,Email,Joined At"];
-    const rows = data.map((user) => {
-        const formattedDate = formatDateTime(user.createdAt);
-        return `${user.user_id},${user.name},${user.role},${user.email},${formattedDate}`;
-    });
-    return [headers, ...rows].join("\n");
-};
+import Tippy from "@tippyjs/react/headless";
 
 // Function to format datetime as MM/DD/YY, HH:MM
 const formatDateTime = (dateString) => {
@@ -33,6 +24,22 @@ const formatDateTime = (dateString) => {
     return `${month}/${day}/${year}, ${hours}:${minutes}`;
 };
 
+// Function to capitalize first letter of a string
+const capitalizeFirstLetter = (str) => {
+    if (!str) return "N/A";
+    return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+};
+
+// Function to convert data to CSV format
+const convertToCSV = (data) => {
+    const headers = ["User ID,Name,Role,Email,Joined At"];
+    const rows = data.map((user) => {
+        const formattedDate = formatDateTime(user.createdAt);
+        return `${user.user_id},${user.name},${capitalizeFirstLetter(user.role)},${user.email},${formattedDate}`;
+    });
+    return [headers, ...rows].join("\n");
+};
+
 const UserManagement = () => {
     const [allUsers, setAllUsers] = useState([]);
     const [page, setPage] = useState(1);
@@ -42,9 +49,10 @@ const UserManagement = () => {
     const [searchQuery, setSearchQuery] = useState("");
     const [roleFilter, setRoleFilter] = useState("");
     const [loading, setLoading] = useState(true);
+    const [filterLoading, setFilterLoading] = useState(false);
     const [error, setError] = useState(null);
     const [isDarkMode, setIsDarkMode] = useState(document.documentElement.classList.contains("dark"));
-    const [pageInput, setPageInput] = useState(""); // State for page number input
+    const [pageInput, setPageInput] = useState("");
 
     const navigate = useNavigate();
     const tableHeaderRef = useRef(null);
@@ -54,12 +62,7 @@ const UserManagement = () => {
         const observer = new MutationObserver(() => {
             setIsDarkMode(document.documentElement.classList.contains("dark"));
         });
-
-        observer.observe(document.documentElement, {
-            attributes: true,
-            attributeFilter: ["class"],
-        });
-
+        observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
         return () => observer.disconnect();
     }, []);
 
@@ -71,7 +74,6 @@ const UserManagement = () => {
             .then(() => setLoading(false))
             .catch((error) => {
                 console.error("Error fetching users:", error);
-                // Only set error and show toast for non-404 errors
                 if (error.response?.status !== 404) {
                     setError(error.message || "Failed to fetch users");
                     toast.error(error.response?.data?.message || "Failed to fetch users");
@@ -83,10 +85,7 @@ const UserManagement = () => {
     // Scroll to table header on page or itemsPerPage change
     useEffect(() => {
         if (tableHeaderRef.current) {
-            tableHeaderRef.current.scrollIntoView({
-                behavior: "smooth",
-                block: "start",
-            });
+            tableHeaderRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
         }
     }, [page, itemsPerPage]);
 
@@ -106,39 +105,40 @@ const UserManagement = () => {
                 setAllUsers(response.data.data || []);
                 setTotalItems(response.data.pagination?.totalItems || 0);
                 setTotalPages(response.data.pagination?.totalPages || 1);
-                setPageInput(page.toString()); // Sync input with current page
+                setPageInput(page.toString());
             } else {
                 throw new Error(`API returned error - ${response.data.message || "Unknown error"}`);
             }
         } catch (error) {
-            // If the error is a 404, treat it as "no users found" instead of an error
             if (error.response?.status === 404) {
                 setAllUsers([]);
                 setTotalItems(0);
                 setTotalPages(1);
-                return; // Don't throw the error, so the UI shows "No users found"
+                return;
             }
             throw error;
         }
     };
 
     const handleSearch = (e) => {
+        setFilterLoading(true);
         setSearchQuery(e.target.value);
-        setPage(1); // Reset to first page on search
+        setPage(1);
+        setTimeout(() => setFilterLoading(false), 300);
     };
 
     const handlePageChange = (newPage) => {
         if (newPage >= 1 && newPage <= totalPages) {
             setPage(newPage);
-            setPageInput(newPage.toString()); // Sync input with new page
+            setPageInput(newPage.toString());
         }
     };
 
     const handleItemsPerPageChange = (event) => {
         const newItemsPerPage = event.target.value;
         setItemsPerPage(newItemsPerPage);
-        setPage(1); // Reset to first page on items per page change
-        setPageInput("1"); // Reset input to 1
+        setPage(1);
+        setPageInput("1");
     };
 
     const startIndex = (page - 1) * itemsPerPage + 1;
@@ -148,8 +148,9 @@ const UserManagement = () => {
         setSearchQuery("");
         setRoleFilter("");
         setPage(1);
-        setPageInput("1"); // Reset input to 1
-        fetchUsers(); // Immediately refetch after clearing filters
+        setPageInput("1");
+        setFilterLoading(true);
+        fetchUsers().finally(() => setFilterLoading(false));
     };
 
     const handleExport = () => {
@@ -165,30 +166,33 @@ const UserManagement = () => {
         window.URL.revokeObjectURL(url);
     };
 
-    // Handle page number input change (only updates the input, not the page)
     const handlePageInputChange = (e) => {
         setPageInput(e.target.value);
     };
 
-    // Handle Enter key press to submit page number
-    const handlePageInputKeyPress = (e) => {
-        if (e.key === "Enter") {
-            const numValue = parseInt(pageInput, 10);
-            if (!isNaN(numValue) && numValue >= 1 && numValue <= totalPages) {
-                setPage(numValue);
-                setPageInput(numValue.toString()); // Ensure input reflects the new page
-            } else {
-                setPageInput(page.toString()); // Revert to current page if invalid
-            }
+    const handleGoButtonClick = () => {
+        const numValue = parseInt(pageInput, 10);
+        if (!isNaN(numValue) && numValue >= 1 && numValue <= totalPages) {
+            setPage(numValue);
+            setPageInput(numValue.toString());
+        } else {
+            setPageInput(page.toString());
         }
     };
 
-    // Render page numbers for custom pagination
+    const getRoleColor = (role) => {
+        switch (role.toLowerCase()) {
+            case "admin": return isDarkMode ? "bg-blue-600 text-white" : "bg-blue-500 text-white";
+            case "customer": return isDarkMode ? "bg-green-600 text-white" : "bg-green-500 text-white";
+            default: return isDarkMode ? "bg-gray-600 text-white" : "bg-gray-500 text-white";
+        }
+    };
+
     const renderPageNumbers = () => {
         const pages = [];
-        const maxPagesToShow = 5; // Maximum number of page buttons to show (excluding first/last)
-        const siblingCount = 1; // Number of pages to show on each side of the current page
-        const boundaryCount = 1; // Always show the first and last pages
+        const maxPagesToShow = window.innerWidth < 640 ? 3 : 5;
+        const siblingCount = 1;
+        const boundaryCount = 1;
 
         let startPage = Math.max(2, page - siblingCount);
         let endPage = Math.min(totalPages - 1, page + siblingCount);
@@ -206,36 +210,37 @@ const UserManagement = () => {
             }
         }
 
-        // Always include the first page
         pages.push(
             <button
                 key={1}
                 onClick={() => handlePageChange(1)}
-                className={`px-3 py-1 rounded-lg mx-1 ${
-                    page === 1 ? "bg-blue-500 text-white" : "bg-white border hover:bg-gray-100"
+                className={`px-3 py-1.5 rounded-md mx-1 text-sm font-medium transition-all duration-200 ${
+                    page === 1
+                        ? "bg-blue-500 text-white"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
                 }`}
             >
                 1
             </button>
         );
 
-        // Add ellipsis if there's a gap between the first page and startPage
         if (startPage > 2) {
             pages.push(
-                <span key="start-ellipsis" className="px-2 py-1">
+                <span key="start-ellipsis" className="px-1 sm:px-2 py-1 text-gray-500 dark:text-gray-400 text-sm">
                     ...
                 </span>
             );
         }
 
-        // Render middle pages
         for (let i = startPage; i <= endPage; i++) {
             pages.push(
                 <button
                     key={i}
                     onClick={() => handlePageChange(i)}
-                    className={`px-3 py-1 rounded-lg mx-1 ${
-                        page === i ? "bg-blue-500 text-white" : "bg-white border hover:bg-gray-100"
+                    className={`px-3 py-1.5 rounded-md mx-1 text-sm font-medium transition-all duration-200 ${
+                        page === i
+                            ? "bg-blue-500 text-white"
+                            : "bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
                     }`}
                 >
                     {i}
@@ -243,23 +248,23 @@ const UserManagement = () => {
             );
         }
 
-        // Add ellipsis if there's a gap between endPage and the last page
         if (endPage < totalPages - 1) {
             pages.push(
-                <span key="end-ellipsis" className="px-2 py-1">
+                <span key="end-ellipsis" className="px-1 sm:px-2 py-1 text-gray-500 dark:text-gray-400 text-sm">
                     ...
                 </span>
             );
         }
 
-        // Always include the last page if totalPages > 1
         if (totalPages > 1) {
             pages.push(
                 <button
                     key={totalPages}
                     onClick={() => handlePageChange(totalPages)}
-                    className={`px-3 py-1 rounded-lg mx-1 ${
-                        page === totalPages ? "bg-blue-500 text-white" : "bg-white border hover:bg-gray-100"
+                    className={`px-3 py-1.5 rounded-md mx-1 text-sm font-medium transition-all duration-200 ${
+                        page === totalPages
+                            ? "bg-blue-500 text-white"
+                            : "bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
                     }`}
                 >
                     {totalPages}
@@ -273,28 +278,32 @@ const UserManagement = () => {
     return (
         <div
             ref={tableHeaderRef}
-            className="min-h-full flex flex-col p-4 sm:p-5 space-y-5 bg-gray-100 dark:bg-gray-900 text-black dark:text-gray-200 overflow-auto"
+            className="min-h-screen flex flex-col p-6 sm:p-8 space-y-6 bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white font-sans"
         >
-            <div className="flex flex-row justify-between items-center mb-5 space-y-2 sm:space-y-0">
-                <h1 className="text-xl font-bold text-black dark:text-white">User Management</h1>
+            <div className="flex flex-row justify-between items-center mb-6">
+                <h1 className="text-xl font-bold text-gray-900 dark:text-white">User Management</h1>
                 <nav className="text-sm sm:text-base text-gray-600 dark:text-gray-300">
-                    <Link to="/admin/dashboard" className="text-[#5671F0] dark:text-purple-300 hover:underline">
+                    <Link to="/admin/dashboard" className="text-blue-500 hover:underline">
                         Dashboard
                     </Link>{" > "}
-                    <span className="text-black dark:text-white">All Users</span>
+                    <span className="text-gray-900 dark:text-white">All Users</span>
                 </nav>
             </div>
 
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-6">
-                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 items-center w-full sm:w-auto">
-                    {/* Search Input */}
-                    <div className="relative w-full sm:w-48 md:w-56 lg:w-64">
+            <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-6">
+                {filterLoading && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-white dark:bg-gray-800 bg-opacity-75 z-10">
+                        <div className="w-6 h-6 border-3 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                    </div>
+                )}
+                <div className="flex flex-col sm:flex-row gap-3 items-center w-full sm:w-auto">
+                    <div className="relative w-full sm:w-56">
                         <input
                             type="text"
                             placeholder="Search by Name or Email"
                             value={searchQuery}
                             onChange={handleSearch}
-                            className="w-full px-3 py-1.5 pl-10 rounded-lg bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm transition-colors duration-200 hover:bg-gray-200 dark:hover:bg-gray-600"
+                            className="w-full px-3 py-2 pl-10 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200 border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm shadow-sm hover:bg-gray-50 dark:hover:bg-gray-600 transition"
                         />
                         <svg
                             xmlns="http://www.w3.org/2000/svg"
@@ -311,157 +320,271 @@ const UserManagement = () => {
                             />
                         </svg>
                     </div>
-
-                    {/* Role Filter */}
-                    <select
-                        value={roleFilter}
-                        onChange={(e) => {
-                            setRoleFilter(e.target.value);
-                            setPage(1);
-                        }}
-                        className="w-full sm:w-32 md:w-36 lg:w-40 px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm transition-colors duration-200 hover:bg-gray-200 dark:hover:bg-gray-600"
-                    >
-                        <option value="" className="dark:bg-gray-700 dark:text-gray-200">All Roles</option>
-                        <option value="admin" className="dark:bg-gray-700 dark:text-gray-200">Admin</option>
-                        <option value="customer" className="dark:bg-gray-700 dark:text-gray-200">Customer</option>
-                    </select>
-
-                    {/* Export Button */}
+                    <div className="relative w-full sm:w-36">
+                        <select
+                            value={roleFilter}
+                            onChange={(e) => {
+                                setFilterLoading(true);
+                                setRoleFilter(e.target.value);
+                                setPage(1);
+                                setTimeout(() => setFilterLoading(false), 300);
+                            }}
+                            className="w-full px-3 py-2 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200 border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm shadow-sm hover:bg-gray-50 dark:hover:bg-gray-600 transition appearance-none"
+                        >
+                            <option value="" className="dark:bg-gray-700 dark:text-gray-200">All Roles</option>
+                            <option value="admin" className="dark:bg-gray-700 dark:text-gray-200">Admin</option>
+                            <option value="customer" className="dark:bg-gray-700 dark:text-gray-200">Customer</option>
+                        </select>
+                        <div className="absolute inset-y-0 right-2 flex items-center pointer-events-none">
+                            <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </div>
+                    </div>
                     <button
-                        className="px-3 py-2 bg-[rgba(185,80,108,0.1)] rounded-lg flex items-center justify-center space-x-1 sm:space-x-2 text-sm font-medium text-[#b9506c] hover:bg-[rgba(185,80,108,0.2)] transition w-full sm:w-auto dark:bg-[rgba(185,80,108,0.2)] dark:text-[#b9506c] dark:hover:bg-[rgba(185,80,108,0.3)]"
+                        onClick={clearFilters}
+                        className="px-3 py-2 rounded-md bg-red-100 text-red-600 dark:bg-red-900 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-800 text-sm font-medium transition-all w-full sm:w-auto shadow-sm"
+                    >
+                        Clear Filters
+                    </button>
+                    <button
+                        className="px-3 py-2 bg-gradient-to-r from-blue-500 to-blue-600 rounded-md flex items-center justify-center space-x-1 text-sm font-medium text-white hover:from-blue-600 hover:to-blue-700 transition-all w-full sm:w-auto shadow-sm"
                         onClick={handleExport}
                     >
                         <DownloadForOfflineIcon className="text-sm" />
                         <span>Export</span>
                     </button>
-                </div>
-
-                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 items-center w-full sm:w-auto">
-                    {/* Add New Button */}
                     <button
                         onClick={() => navigate("/admin/users/add")}
-                        className="px-3 py-2 bg-blue-500 rounded-lg flex items-center justify-center space-x-1 sm:space-x-2 text-sm font-medium text-white hover:bg-blue-600 transition w-full sm:w-auto"
+                        className="px-3 py-2 bg-blue-500 rounded-md flex items-center justify-center space-x-1 text-sm font-medium text-white hover:bg-blue-600 transition-all w-full sm:w-auto shadow-sm"
                     >
                         <span>+ Add New</span>
                     </button>
                 </div>
             </div>
 
-            <div className="overflow-x-auto bg-white dark:bg-gray-800 rounded-lg shadow">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm dark:shadow-gray-900 border border-gray-200 dark:border-gray-700">
                 {loading ? (
-                    <div className="flex justify-center items-center h-64">
-                        <CircularProgress />
+                    <div className="flex justify-center items-center h-64 bg-white dark:bg-gray-800 bg-opacity-75">
+                        <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
                     </div>
                 ) : error ? (
-                    <div className="flex flex-col items-center justify-center h-64 text-center">
-                        <p className="text-lg text-red-600 dark:text-red-400 mb-4">{error}</p>
+                    <div className="flex flex-col items-center justify-center h-64 text-center p-6">
+                        <p className="text-sm text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-900 rounded-md p-3 mb-4">{error}</p>
                         <button
                             onClick={() => fetchUsers()}
-                            className="px-3 py-2 bg-purple-600 text-white dark:text-white rounded-lg hover:bg-purple-700 transition"
+                            className="px-3 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-all text-sm shadow-sm"
                         >
                             Retry
                         </button>
                     </div>
                 ) : allUsers.length > 0 ? (
                     <>
-                        <table className="w-full text-left text-sm">
-                            <thead className="bg-[#f1f6fd] dark:bg-gray-700 text-black dark:text-white">
-                            <tr>
-                                <th className="p-2 sm:p-3 font-semibold">User ID</th>
-                                <th className="p-2 sm:p-3 font-semibold">User</th>
-                                <th className="p-2 sm:p-3 font-semibold">Role</th>
-                                <th className="p-2 sm:p-3 font-semibold">Email</th>
-                                <th className="p-2 sm:p-3 font-semibold">Joined At</th>
-                                <th className="p-2 sm:p-3 font-semibold">Actions</th>
-                            </tr>
-                            </thead>
-                            <tbody className="bg-white dark:bg-gray-900 text-black dark:text-white">
-                            {allUsers.map((user) => (
-                                <tr
-                                    key={user.user_id}
-                                    className="border-t border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800"
-                                >
-                                    <td className="p-2 sm:p-3">{user.user_id}</td>
-                                    <td className="p-2 sm:p-3 flex items-center space-x-2">
-                                        <img
-                                            src={user.avatar || "https://via.placeholder.com/40"}
-                                            alt={`${user.name}'s avatar`}
-                                            className="w-8 h-8 rounded-full object-cover"
-                                        />
-                                        <span>{user.name}</span>
-                                    </td>
-                                    <td className="p-2 sm:p-3">{user.role}</td>
-                                    <td className="p-2 sm:p-3">{user.email}</td>
-                                    <td className="p-2 sm:p-3">
-                                        {user.createdAt ? formatDateTime(user.createdAt) : "N/A"}
-                                    </td>
-                                    <td className="p-2 sm:p-3 flex flex-row space-x-2">
-                                        <button
-                                            className="text-green-500 dark:text-green-300 hover:text-green-700 dark:hover:text-green-400 p-2 rounded-lg bg-green-100 dark:bg-green-100/20 flex items-center justify-center w-10 h-10"
-                                            onClick={() => navigate(`/admin/users/edit/${user.user_id}`)}
+                        <div className="overflow-x-auto max-w-full">
+                            <table className="w-full text-left text-sm">
+                                <thead className="bg-blue-50 dark:bg-gray-700 text-gray-900 dark:text-white sticky top-0">
+                                    <tr>
+                                        <th className="p-3 font-semibold">User ID</th>
+                                        <th className="p-3 font-semibold">User</th>
+                                        <th className="p-3 font-semibold">Role</th>
+                                        <th className="p-3 font-semibold">Email</th>
+                                        <th className="p-3 font-semibold">Joined At</th>
+                                        <th className="p-3 font-semibold">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">
+                                    {allUsers.map((user) => (
+                                        <tr
+                                            key={user.user_id}
+                                            className="border-t border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all"
                                         >
-                                            <Pencil size={20} />
-                                        </button>
-                                    </td>
-                                </tr>
-                            ))}
-                            </tbody>
-                        </table>
-                        <div className="flex flex-col sm:flex-row justify-between items-center mt-4 p-2 sm:p-3 bg-white dark:bg-gray-900 text-black dark:text-gray-200">
+                                            <td className="p-3 max-w-[150px]">
+                                                <Tippy
+                                                    render={(attrs) => (
+                                                        <div
+                                                            className="bg-gray-800 text-white p-2 rounded-md shadow-lg dark:bg-gray-900 text-sm"
+                                                            {...attrs}
+                                                        >
+                                                            {user.user_id}
+                                                        </div>
+                                                    )}
+                                                    placement="top"
+                                                >
+                                                    <span className="truncate block">{user.user_id}</span>
+                                                </Tippy>
+                                            </td>
+                                            <td className="p-3 max-w-[150px]">
+                                                <Tippy
+                                                    render={(attrs) => (
+                                                        <div
+                                                            className="bg-gray-800 text-white p-2 rounded-md shadow-lg dark:bg-gray-900 text-sm"
+                                                            {...attrs}
+                                                        >
+                                                            {user.name}
+                                                        </div>
+                                                    )}
+                                                    placement="top"
+                                                >
+                                                    <div className="flex items-center space-x-2 truncate">
+                                                        <img
+                                                            src={user.avatar || "https://via.placeholder.com/40"}
+                                                            alt={`${user.name}'s avatar`}
+                                                            className="w-8 h-8 rounded-full object-cover"
+                                                        />
+                                                        <span className="truncate">{user.name}</span>
+                                                    </div>
+                                                </Tippy>
+                                            </td>
+                                            <td className="p-3">
+                                                <span
+                                                    className={`px-3 py-1 rounded-full text-xs font-semibold ${getRoleColor(
+                                                        user.role || "N/A"
+                                                    )} hover:scale-105 transition-transform`}
+                                                >
+                                                    {capitalizeFirstLetter(user.role) || "N/A"}
+                                                </span>
+                                            </td>
+                                            <td className="p-3 max-w-[150px]">
+                                                <Tippy
+                                                    render={(attrs) => (
+                                                        <div
+                                                            className="bg-gray-800 text-white p-2 rounded-md shadow-lg dark:bg-gray-900 text-sm"
+                                                            {...attrs}
+                                                        >
+                                                            {user.email}
+                                                        </div>
+                                                    )}
+                                                    placement="top"
+                                                >
+                                                    <span className="truncate block">{user.email}</span>
+                                                </Tippy>
+                                            </td>
+                                            <td className="p-3">
+                                                {user.createdAt ? formatDateTime(user.createdAt) : "N/A"}
+                                            </td>
+                                            <td className="p-3 flex flex-row space-x-2">
+                                                <button
+                                                    className="text-blue-500 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 p-2 rounded-lg bg-blue-100 dark:bg-blue-900/20 flex items-center justify-center w-10 h-10 hover:bg-blue-200 dark:hover:bg-blue-800 transition-all shadow-sm"
+                                                    onClick={() => navigate(`/admin/users/edit/${user.user_id}`)}
+                                                >
+                                                    <Pencil size={18} />
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div className="flex flex-col sm:flex-row justify-between items-center mt-4 p-3 sm:p-4 bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-t border-gray-200 dark:border-gray-700 gap-3 sm:gap-0">
                             <div className="flex items-center space-x-2 text-sm">
-                                <span>Show</span>
-                                <FormControl variant="outlined" size="small">
-                                    <Select
-                                        value={itemsPerPage}
-                                        onChange={handleItemsPerPageChange}
-                                        className="min-w-[60px] bg-white dark:bg-gray-700 text-black dark:text-white border-gray-300 dark:border-gray-600 rounded"
-                                    >
-                                        <MenuItem value={10}>10</MenuItem>
-                                        <MenuItem value={25}>25</MenuItem>
-                                        <MenuItem value={50}>50</MenuItem>
-                                        <MenuItem value={100}>100</MenuItem>
-                                    </Select>
-                                </FormControl>
-                                <span>entries</span>
+                                <span className="text-gray-600 dark:text-gray-300">Show</span>
+                                <select
+                                    value={itemsPerPage}
+                                    onChange={handleItemsPerPageChange}
+                                    className="px-3 py-1.5 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200 border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm shadow-sm hover:bg-gray-50 dark:hover:bg-gray-600 transition"
+                                >
+                                    <option value={10} className="dark:bg-gray-700 dark:text-gray-200">10</option>
+                                    <option value={25} className="dark:bg-gray-700 dark:text-gray-200">25</option>
+                                    <option value={50} className="dark:bg-gray-700 dark:text-gray-200">50</option>
+                                    <option value={100} className="dark:bg-gray-700 dark:text-gray-200">100</option>
+                                </select>
+                                <span className="text-gray-600 dark:text-gray-300">entries</span>
                             </div>
-                            <span className="text-sm mt-2 sm:mt-0">
+                            <span className="text-sm text-gray-600 dark:text-gray-300 order-3 sm:order-2">
                                 Showing {startIndex} to {endIndex} of {totalItems} entries
                             </span>
-                            <div className="flex items-center space-x-2 mt-2 sm:mt-0">
+                            <div className="flex flex-wrap items-center justify-center sm:justify-end space-x-2 order-2 sm:order-3 gap-2">
                                 <button
                                     onClick={() => handlePageChange(page - 1)}
                                     disabled={page === 1}
-                                    className={`px-3 py-1 rounded-lg border ${page === 1 ? 'bg-gray-300 cursor-not-allowed' : 'bg-white hover:bg-gray-100'}`}
+                                    className={`flex items-center px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200 ${
+                                        page === 1
+                                            ? "bg-gray-200 text-gray-400 opacity-50 cursor-not-allowed dark:bg-gray-700 dark:text-gray-500"
+                                            : "bg-blue-500 text-white hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700"
+                                    }`}
                                 >
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        className="h-4 w-4 mr-1"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        stroke="currentColor"
+                                    >
+                                        <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth={2}
+                                            d="M15 19l-7-7 7-7"
+                                        />
+                                    </svg>
                                     Previous
                                 </button>
-                                {renderPageNumbers()}
+                                <div className="flex items-center space-x-1">
+                                    {renderPageNumbers()}
+                                </div>
                                 <button
                                     onClick={() => handlePageChange(page + 1)}
                                     disabled={page === totalPages}
-                                    className={`px-3 py-1 rounded-lg border ${page === totalPages ? 'bg-gray-300 cursor-not-allowed' : 'bg-white hover:bg-gray-100'}`}
+                                    className={`flex items-center px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200 ${
+                                        page === totalPages
+                                            ? "bg-gray-200 text-gray-400 opacity-50 cursor-not-allowed dark:bg-gray-700 dark:text-gray-500"
+                                            : "bg-blue-500 text-white hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700"
+                                    }`}
                                 >
                                     Next
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        className="h-4 w-4 ml-1"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        stroke="currentColor"
+                                    >
+                                        <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth={2}
+                                            d="M9 5l7 7-7 7"
+                                        />
+                                    </svg>
                                 </button>
-                                <TextField
-                                    variant="outlined"
-                                    size="small"
-                                    value={pageInput}
-                                    onChange={handlePageInputChange}
-                                    onKeyPress={handlePageInputKeyPress}
-                                    inputProps={{ style: { textAlign: "center" } }}
-                                    className="w-16 bg-white dark:bg-gray-700 text-black dark:text-white border-gray-300 dark:border-gray-600 rounded text-sm"
-                                    placeholder="Go to page"
-                                />
+                                <div className="flex items-center space-x-1">
+                                    <input
+                                        type="text"
+                                        value={pageInput}
+                                        onChange={handlePageInputChange}
+                                        className="w-14 px-2 py-1.5 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200 border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm shadow-sm text-center transition-all"
+                                        placeholder="Page"
+                                    />
+                                    <button
+                                        onClick={handleGoButtonClick}
+                                        className="px-3 py-1.5 rounded-md bg-blue-500 text-white hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 text-sm font-medium transition-all shadow-sm"
+                                    >
+                                        Go
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </>
                 ) : (
-                    <div className="flex flex-col items-center justify-center h-64 text-center">
-                        <p className="text-lg text-gray-600 dark:text-gray-300 mb-4">No users found</p>
+                    <div className="flex flex-col items-center justify-center h-64 text-center p-6">
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-10 w-10 text-gray-400 dark:text-gray-500 mb-4"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                        >
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M12 4.5c4.418 0 8 3.582 8 8s-3.582 8-8 8-8-3.582-8-8 3.582-8 8-8zm0 2c-3.314 0-6 2.686-6 6s2.686 6 6 6 6-2.686 6-6-2.686-6-6-6z"
+                            />
+                        </svg>
+                        <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">No users found</p>
                         <button
                             onClick={clearFilters}
-                            className="px-3 py-2 bg-purple-600 text-white dark:text-white rounded-lg hover:bg-purple-700 transition"
+                            className="px-3 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-all text-sm shadow-sm"
                         >
                             Clear Filters
                         </button>
